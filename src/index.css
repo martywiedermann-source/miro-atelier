@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 50 11% 97.6%;
+    --foreground: 0 0% 5.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 5.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 5.1%;
+    --primary: 43 52% 54%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 36 19% 93.1%;
+    --secondary-foreground: 0 0% 5.1%;
+    --muted: 36 19% 93.1%;
+    --muted-foreground: 0 0% 42%;
+    --accent: 43 52% 54%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 36 14% 88%;
+    --input: 36 14% 88%;
+    --ring: 43 52% 54%;
+    --radius: 0.25rem;
+
+    --surface: 0 0% 100%;
+    --surface-warm: 36 19% 93.1%;
+    --gold: 43 52% 54%;
+    --gold-hover: 38 48% 44%;
+    --dark-contrast: 0 0% 5.1%;
+    --dark-contrast-foreground: 36 19% 93.1%;
+
+    --sidebar-background: 50 11% 97.6%;
+    --sidebar-foreground: 0 0% 5.1%;
+    --sidebar-primary: 43 52% 54%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 36 19% 93.1%;
+    --sidebar-accent-foreground: 0 0% 5.1%;
+    --sidebar-border: 36 14% 88%;
+    --sidebar-ring: 43 52% 54%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(50 11% 97.6%);
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(36 14% 80%);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(43 52% 54%);
+}
+
+/* Gold line separator */
+.gold-line {
+  @apply w-16 h-px bg-primary mx-auto;
+}
+
+/* Section number labels */
+.section-number {
+  @apply font-mono text-primary/30 text-7xl md:text-9xl font-bold absolute -top-8 -left-4 select-none;
+}
