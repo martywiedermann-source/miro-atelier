@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { artworks } from "@/lib/artworks";
 
 interface TimelineItem {
   year: string;
@@ -19,9 +20,13 @@ const milestones: TimelineItem[] = [
   { year: "2010", title: "Galerie Bronto u. Wiesel, Wiesbaden", description: "Ausstellung in der Galerie Bronto u. Wiesel in Wiesbaden." },
 ];
 
-/**
- * Vertical center-line timeline with alternating left/right entries
- */
+function artworkForYear(year: string) {
+  const yr = parseInt(year, 10);
+  const matches = artworks.filter((a) => a.year === yr && a.images.length > 0);
+  if (matches.length === 0) return null;
+  return matches.reduce((best, a) => a.images.length > best.images.length ? a : best);
+}
+
 const Timeline = () => {
   return (
     <div className="relative">
@@ -31,27 +36,98 @@ const Timeline = () => {
       <div className="space-y-16">
         {milestones.map((item, i) => {
           const isLeft = i % 2 === 0;
+          const artwork = artworkForYear(item.year);
+          const imgSrc = artwork?.images[0];
+
           return (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: i * 0.1 }}
+              transition={{ duration: 0.6, delay: i * 0.08 }}
               className="relative grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-12"
             >
               {/* Dot on line */}
               <div className="absolute left-4 md:left-1/2 -translate-x-1/2 top-1 w-2.5 h-2.5 rounded-full bg-primary z-10" />
 
-              {/* Content */}
-              <div className={`pl-12 md:pl-0 ${isLeft ? "md:text-right md:pr-12" : "md:col-start-2 md:pl-12"}`}>
-                <span className="font-mono text-xs text-primary tracking-wider">{item.year}</span>
-                <h4 className="font-display text-xl text-foreground mt-1 mb-2">{item.title}</h4>
-                <p className="text-muted-foreground text-sm leading-relaxed">{item.description}</p>
-              </div>
+              {isLeft ? (
+                <>
+                  {/* Text — left column */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -24 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.55, delay: i * 0.08 + 0.1 }}
+                    className="pl-12 md:pl-0 md:text-right md:pr-12"
+                  >
+                    <span className="font-mono text-xs text-primary tracking-wider">{item.year}</span>
+                    <h4 className="font-display text-xl text-foreground mt-1 mb-2">{item.title}</h4>
+                    <p className="text-muted-foreground text-sm leading-relaxed">{item.description}</p>
+                  </motion.div>
 
-              {/* Empty column for alignment */}
-              {isLeft ? <div className="hidden md:block" /> : null}
+                  {/* Image or empty — right column */}
+                  {imgSrc ? (
+                    <motion.div
+                      initial={{ opacity: 0, x: 24 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.55, delay: i * 0.08 + 0.15 }}
+                      className="hidden md:flex items-center pl-12"
+                    >
+                      <img
+                        src={imgSrc}
+                        alt={artwork!.title}
+                        className="w-32 h-24 object-cover shadow-sm"
+                        loading="lazy"
+                      />
+                      <span className="font-mono text-[10px] text-muted-foreground ml-3 leading-tight">
+                        {artwork!.title}
+                      </span>
+                    </motion.div>
+                  ) : (
+                    <div className="hidden md:block" />
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Image or empty — left column */}
+                  {imgSrc ? (
+                    <motion.div
+                      initial={{ opacity: 0, x: -24 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.55, delay: i * 0.08 + 0.15 }}
+                      className="hidden md:flex items-center justify-end pr-12"
+                    >
+                      <span className="font-mono text-[10px] text-muted-foreground mr-3 leading-tight text-right">
+                        {artwork!.title}
+                      </span>
+                      <img
+                        src={imgSrc}
+                        alt={artwork!.title}
+                        className="w-32 h-24 object-cover shadow-sm"
+                        loading="lazy"
+                      />
+                    </motion.div>
+                  ) : (
+                    <div className="hidden md:block" />
+                  )}
+
+                  {/* Text — right column */}
+                  <motion.div
+                    initial={{ opacity: 0, x: 24 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.55, delay: i * 0.08 + 0.1 }}
+                    className="pl-12 md:col-start-2 md:pl-12"
+                  >
+                    <span className="font-mono text-xs text-primary tracking-wider">{item.year}</span>
+                    <h4 className="font-display text-xl text-foreground mt-1 mb-2">{item.title}</h4>
+                    <p className="text-muted-foreground text-sm leading-relaxed">{item.description}</p>
+                  </motion.div>
+                </>
+              )}
             </motion.div>
           );
         })}

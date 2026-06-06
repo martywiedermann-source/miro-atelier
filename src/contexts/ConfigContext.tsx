@@ -7,6 +7,10 @@ export interface ArtworkOverride {
   hiddenImages?: string[];
   imageOrder?: string[];
   status?: "available" | "sold" | "on-loan" | "not-for-sale";
+  titleOverride?: string;
+  yearOverride?: number | null;
+  dimensionsOverride?: string;
+  mediumOverride?: string;
 }
 
 export interface SiteOverride {

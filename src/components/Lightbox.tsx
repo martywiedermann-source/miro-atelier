@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { Artwork } from "@/lib/artworks";
-import { useVisibleArtworks, useVisibleImages } from "@/lib/hooks";
+import { useVisibleArtworks, useVisibleImages, useArtworkMeta } from "@/lib/hooks";
+import ArtworkPlaceholder from "@/components/ArtworkPlaceholder";
 import { Link } from "react-router-dom";
 
 const EMPTY_ARTWORK: Artwork = {
@@ -89,6 +90,7 @@ const Lightbox = ({ artwork, onClose, onNavigate }: LightboxProps) => {
   }, [artwork, onClose, goTo, goToPrevImg, goToNextImg]);
 
   const images = useVisibleImages(artwork ?? EMPTY_ARTWORK);
+  const meta = useArtworkMeta(artwork ?? EMPTY_ARTWORK);
 
   return (
     <AnimatePresence>
@@ -111,9 +113,9 @@ const Lightbox = ({ artwork, onClose, onNavigate }: LightboxProps) => {
                 {artwork.category}
               </p>
               <h2 className="font-display text-xl md:text-2xl font-light text-foreground mt-0.5">
-                {artwork.title}
-                {artwork.year && (
-                  <span className="font-mono text-sm text-muted-foreground ml-4">{artwork.year}</span>
+                {meta.title}
+                {meta.year && (
+                  <span className="font-mono text-sm text-muted-foreground ml-4">{meta.year}</span>
                 )}
               </h2>
             </div>
@@ -158,7 +160,7 @@ const Lightbox = ({ artwork, onClose, onNavigate }: LightboxProps) => {
                         >
                           <img
                             src={src}
-                            alt={`${artwork.title} ${i + 1}`}
+                            alt={`${meta.title} ${i + 1}`}
                             className="max-h-full max-w-full object-contain select-none"
                             draggable={false}
                           />
@@ -201,9 +203,7 @@ const Lightbox = ({ artwork, onClose, onNavigate }: LightboxProps) => {
                   )}
                 </>
               ) : (
-                <div className="flex items-center justify-center w-full h-full text-muted-foreground/40 text-sm font-mono">
-                  Kein Foto verfügbar
-                </div>
+                <ArtworkPlaceholder className="w-full h-full" />
               )}
 
               {/* Artwork prev/next */}
@@ -252,11 +252,11 @@ const Lightbox = ({ artwork, onClose, onNavigate }: LightboxProps) => {
                   })()}
 
                   <div className="space-y-1.5 mb-8">
-                    {artwork.medium && (
-                      <p className="font-mono text-sm text-muted-foreground">{artwork.medium}</p>
+                    {meta.medium && (
+                      <p className="font-mono text-sm text-muted-foreground">{meta.medium}</p>
                     )}
-                    {artwork.dimensions && (
-                      <p className="font-mono text-sm text-muted-foreground">{artwork.dimensions}</p>
+                    {meta.dimensions && (
+                      <p className="font-mono text-sm text-muted-foreground">{meta.dimensions}</p>
                     )}
                     {images.length > 1 && (
                       <p className="font-mono text-xs text-muted-foreground/50 pt-1">
@@ -271,13 +271,21 @@ const Lightbox = ({ artwork, onClose, onNavigate }: LightboxProps) => {
                   )}
                 </div>
                 {(artwork.status ?? "available") !== "sold" ? (
-                  <Link
-                    to={`/contact?inquiry=artwork&work=${encodeURIComponent(artwork.title)}`}
-                    className="inline-block self-start font-mono text-xs uppercase tracking-[0.3em] bg-primary text-primary-foreground px-6 py-3 hover:bg-gold-hover transition-all duration-500 mt-6"
-                    onClick={onClose}
-                  >
-                    Preis auf Anfrage
-                  </Link>
+                  <div className="flex flex-col gap-2 mt-6">
+                    <Link
+                      to={`/contact?inquiry=artwork&work=${encodeURIComponent(meta.title)}`}
+                      className="inline-block self-start font-mono text-xs uppercase tracking-[0.3em] bg-primary text-primary-foreground px-6 py-3 hover:bg-gold-hover transition-all duration-500"
+                      onClick={onClose}
+                    >
+                      Anfrage stellen
+                    </Link>
+                    <a
+                      href={`mailto:miro@ateliermiro.de?subject=${encodeURIComponent(`Anfrage zu: ${meta.title}`)}`}
+                      className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Direkt per E-Mail →
+                    </a>
+                  </div>
                 ) : (
                   <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground/50 mt-6">
                     Dieses Werk ist verkauft

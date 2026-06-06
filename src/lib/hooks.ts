@@ -29,6 +29,17 @@ export function useVisibleImages(artwork: Artwork): string[] {
   return imgs.filter((src) => !hidden.has(src));
 }
 
+export function useArtworkMeta(artwork: Artwork) {
+  const { effectiveOverride } = useConfig();
+  const o = effectiveOverride.artworks?.[artwork.id];
+  return {
+    title: o?.titleOverride ?? artwork.title,
+    year: o?.yearOverride !== undefined ? o.yearOverride : artwork.year,
+    dimensions: o?.dimensionsOverride ?? artwork.dimensions,
+    medium: o?.mediumOverride ?? artwork.medium,
+  };
+}
+
 export function useEffectiveEvents(): ArtEvent[] {
   const { effectiveOverride } = useConfig();
   // If override has an events array, it replaces the static array entirely

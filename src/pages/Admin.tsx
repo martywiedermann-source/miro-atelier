@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import ArtworkPlaceholder from "@/components/ArtworkPlaceholder";
 
 // ── Auth error ────────────────────────────────────────────────────────────────
 
@@ -191,6 +192,8 @@ const Admin = () => {
   const replaceRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [replacingImage, setReplacingImage] = useState<{ artworkId: string; src: string } | null>(null);
   const [syncingArtwork, setSyncingArtwork] = useState<string | null>(null);
+  const dragFrom = useRef<{ artworkId: string; index: number } | null>(null);
+  const [dragOverKey, setDragOverKey] = useState<string | null>(null);
 
   // Event state
   const effectiveEvents: ArtEvent[] = effectiveOverride.events ?? staticEvents;
@@ -536,6 +539,33 @@ const Admin = () => {
     });
   }
 
+  // ── Artwork metadata helpers ────────────────────────────────────────────────
+
+  function getArtworkMetaField<K extends "titleOverride" | "yearOverride" | "dimensionsOverride" | "mediumOverride">(
+    id: string, field: K, fallback: string
+  ): string {
+    const val = draftOverride.artworks?.[id]?.[field];
+    return val != null ? String(val) : fallback;
+  }
+
+  function setArtworkMetaField(
+    id: string,
+    field: "titleOverride" | "yearOverride" | "dimensionsOverride" | "mediumOverride",
+    value: string
+  ) {
+    const parsed = field === "yearOverride"
+      ? (value === "" ? null : Number(value) || null)
+      : value || undefined;
+    const next: typeof draftOverride = {
+      ...draftOverride,
+      artworks: {
+        ...draftOverride.artworks,
+        [id]: { ...draftOverride.artworks?.[id], [field]: parsed },
+      },
+    };
+    autoSave(next);
+  }
+
   // ── Server image sync ───────────────────────────────────────────────────────
 
   async function syncServerImages(artworkId: string, currentOrder: string[]) {
@@ -689,22 +719,18 @@ const Admin = () => {
                       {orderedImages[0] ? (
                         <img src={orderedImages[0]} alt={artwork.title} className={`w-10 h-10 object-cover shrink-0 ${!visible ? "opacity-30 grayscale" : ""}`} />
                       ) : (
-                        <div className="w-10 h-10 bg-border/40 shrink-0 flex items-center justify-center">
-                          <span className="text-[8px] text-muted-foreground">–</span>
-                        </div>
+                        <ArtworkPlaceholder className="w-10 h-10 shrink-0" />
                       )}
                       <div className="flex-1 min-w-0">
                         <p className={`font-body text-sm truncate ${!visible ? "line-through text-muted-foreground" : ""}`}>{artwork.title}</p>
                         <p className="font-mono text-[10px] text-muted-foreground">{artwork.year} · {totalImages} Bild{totalImages !== 1 ? "er" : ""}</p>
                       </div>
-                      {baseImages.length > 0 && (
-                        <button
-                          onClick={() => setExpandedArtwork(isExpanded ? null : artwork.id)}
-                          className="font-mono text-[10px] text-muted-foreground hover:text-foreground uppercase tracking-wider px-2 py-1 border border-border/50 hover:border-foreground/30 transition-colors"
-                        >
-                          {isExpanded ? "▲" : "▼"}
-                        </button>
-                      )}
+                      <button
+                        onClick={() => setExpandedArtwork(isExpanded ? null : artwork.id)}
+                        className="font-mono text-[10px] text-muted-foreground hover:text-foreground uppercase tracking-wider px-2 py-1 border border-border/50 hover:border-foreground/30 transition-colors"
+                      >
+                        {isExpanded ? "▲" : "▼"}
+                      </button>
                       <Switch checked={visible} onCheckedChange={(v) => setArtworkVisible(artwork.id, v)} />
                     </div>
 
@@ -729,13 +755,32 @@ const Admin = () => {
                         <div className="flex flex-wrap gap-2">
                           {orderedImages.map((src, i) => {
                             const hidden = isImageHidden(artwork.id, src);
+                            const dragKey = `${artwork.id}-${i}`;
+                            const isDropTarget = dragOverKey === dragKey && dragFrom.current?.artworkId === artwork.id && dragFrom.current?.index !== i;
                             return (
-                              <div key={src} className="relative group/img flex flex-col items-center gap-1">
-                                <div className="relative">
+                              <div
+                                key={src}
+                                className={`relative group/img flex flex-col items-center gap-1 transition-opacity ${isDropTarget ? "ring-2 ring-primary ring-offset-1" : ""}`}
+                                draggable
+                                onDragStart={() => { dragFrom.current = { artworkId: artwork.id, index: i }; }}
+                                onDragOver={(e) => { e.preventDefault(); setDragOverKey(dragKey); }}
+                                onDragLeave={() => setDragOverKey(null)}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  setDragOverKey(null);
+                                  if (dragFrom.current?.artworkId === artwork.id && dragFrom.current.index !== i) {
+                                    moveImage(artwork.id, baseImages, dragFrom.current.index, i);
+                                  }
+                                  dragFrom.current = null;
+                                }}
+                                onDragEnd={() => { dragFrom.current = null; setDragOverKey(null); }}
+                              >
+                                <div className="relative cursor-grab active:cursor-grabbing">
                                   <img
                                     src={src}
                                     alt={`${artwork.title} ${i + 1}`}
                                     className={`w-16 h-16 object-cover ${hidden ? "opacity-25 grayscale" : ""}`}
+                                    draggable={false}
                                   />
                                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1">
                                     <button onClick={() => setImageHidden(artwork.id, src, !hidden)} className="text-white text-sm p-0.5" title={hidden ? "Zeigen" : "Ausblenden"}>
@@ -749,7 +794,7 @@ const Admin = () => {
                                     </button>
                                   </div>
                                 </div>
-                                {/* Reorder arrows */}
+                                {/* Reorder arrows (Tastatur-Fallback) */}
                                 <div className="flex gap-0.5 opacity-0 group-hover/img:opacity-100 transition-opacity">
                                   <button onClick={() => moveImage(artwork.id, baseImages, i, i - 1)} disabled={i === 0} className="font-mono text-[9px] px-1 border border-border/50 disabled:opacity-20">←</button>
                                   <button onClick={() => moveImage(artwork.id, baseImages, i, i + 1)} disabled={i === orderedImages.length - 1} className="font-mono text-[9px] px-1 border border-border/50 disabled:opacity-20">→</button>
@@ -786,6 +831,54 @@ const Admin = () => {
                           <p className="font-mono text-[10px] text-muted-foreground">Maximum 15 Bilder erreicht</p>
                         )}
 
+                        {/* Metadaten-Formular */}
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/30">
+                          <div className="col-span-2 flex items-center gap-2">
+                            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground w-14 shrink-0">Titel</span>
+                            <input
+                              type="text"
+                              defaultValue={getArtworkMetaField(artwork.id, "titleOverride", artwork.title)}
+                              key={`title-${artwork.id}`}
+                              onBlur={(e) => setArtworkMetaField(artwork.id, "titleOverride", e.target.value)}
+                              placeholder={artwork.title}
+                              className="flex-1 font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground w-14 shrink-0">Jahr</span>
+                            <input
+                              type="number"
+                              defaultValue={getArtworkMetaField(artwork.id, "yearOverride", String(artwork.year ?? ""))}
+                              key={`year-${artwork.id}`}
+                              onBlur={(e) => setArtworkMetaField(artwork.id, "yearOverride", e.target.value)}
+                              placeholder={String(artwork.year ?? "")}
+                              className="w-full font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground w-14 shrink-0">Maße</span>
+                            <input
+                              type="text"
+                              defaultValue={getArtworkMetaField(artwork.id, "dimensionsOverride", artwork.dimensions)}
+                              key={`dim-${artwork.id}`}
+                              onBlur={(e) => setArtworkMetaField(artwork.id, "dimensionsOverride", e.target.value)}
+                              placeholder={artwork.dimensions || "z.B. 165 × 125 cm"}
+                              className="w-full font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                          <div className="col-span-2 flex items-center gap-2">
+                            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground w-14 shrink-0">Technik</span>
+                            <input
+                              type="text"
+                              defaultValue={getArtworkMetaField(artwork.id, "mediumOverride", artwork.medium)}
+                              key={`med-${artwork.id}`}
+                              onBlur={(e) => setArtworkMetaField(artwork.id, "mediumOverride", e.target.value)}
+                              placeholder={artwork.medium || "z.B. Filz, Acryl"}
+                              className="flex-1 font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                        </div>
+
                         {/* Artwork status + server sync */}
                         <div className="flex flex-wrap items-center gap-3 pt-1 border-t border-border/30">
                           <div className="flex items-center gap-2">
@@ -811,7 +904,7 @@ const Admin = () => {
                           </button>
                         </div>
                         <p className="font-mono text-[10px] text-muted-foreground">
-                          Hover: 🚫 ausblenden · 🔄 ersetzen · 🗑 archivieren · ← → sortieren
+                          Ziehen zum Sortieren · Hover: 🚫 ausblenden · 🔄 ersetzen · 🗑 archivieren · ← → sortieren
                         </p>
                       </div>
                     )}
