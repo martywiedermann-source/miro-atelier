@@ -26,3 +26,8 @@ dist-ssr
 
 # Deploy-Script mit Credentials — nie committen
 deploy.sh
+
+# Laufzeitdaten (Admin-Panel, Uploads) — nie committen
+public/site-override.json
+public/images/gallery/archiv/
+public/images/gallery/*/archiv/
