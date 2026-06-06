@@ -70,19 +70,12 @@ const Navbar = () => {
           style={{ height: "76px" }}
         >
           {/* Logo */}
-          <Link to="/" className="flex flex-col leading-none select-none group">
-            <span
-              className="leading-none transition-opacity duration-300 group-hover:opacity-70"
-              style={{ fontFamily: '"Bodoni Moda", Didot, "Bodoni 72", Georgia, serif', color: "#1a1a1a", letterSpacing: "0.15em", fontWeight: 400, fontSize: "clamp(18px, 2vw, 24px)", textTransform: "uppercase" }}
-            >
-              Atelier
-            </span>
-            <span
-              className="leading-tight transition-opacity duration-300 group-hover:opacity-70"
-              style={{ fontFamily: '"Bodoni Moda", Didot, "Bodoni 72", Georgia, serif', color: "#1a1a1a", letterSpacing: "0.10em", fontWeight: 400, fontSize: "clamp(14px, 1.6vw, 19px)", textTransform: "uppercase" }}
-            >
-              Miroslav
-            </span>
+          <Link to="/" className="flex items-center select-none group transition-opacity duration-300 hover:opacity-70">
+            <img
+              src="/logo/logo-dark.jpg"
+              alt="Atelier Miroslav Wiedermann"
+              className="h-10 w-auto object-contain"
+            />
           </Link>
 
           {/* Desktop nav */}

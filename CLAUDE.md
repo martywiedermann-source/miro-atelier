@@ -6,6 +6,62 @@
 - Stack: React + Vite + Tailwind
 - Hauptdatei: src/lib/artworks.ts
 
+## Entwicklung starten
+
+```bash
+npm run dev
+```
+
+Startet **beide Server gleichzeitig**:
+- Vite (Frontend): http://localhost:5173
+- API-Server (Node.js): http://localhost:3001
+
+**Admin-Panel:** http://localhost:5173/admin
+**Vorschau Website:** http://localhost:5173
+
+Nach Code-Änderungen:
+```bash
+npm run build
+```
+
+## Architektur
+
+```
+miro-atelier-main/
+├── src/                      # React-Frontend
+│   ├── pages/Admin.tsx       # Admin-Panel UI
+│   ├── lib/artworks.ts       # Alle Kunstwerke (Hauptdatei!)
+│   └── components/           # Navbar, Hero, Slider, Lightbox …
+├── server/
+│   └── api.mjs               # Node.js API-Server (Port 3001)
+├── public/
+│   ├── api/admin.php         # PHP-Backend für Produktion (ateliermiro.de)
+│   ├── images/gallery/       # Alle Galeriebilder nach Werk-ID
+│   ├── images/slider/        # Hero-Slider Bilder (hochgeladen via Admin)
+│   └── site-override.json    # Admin-Konfiguration (wird vom API geschrieben)
+└── DESIGN.md                 # Vollständige Design-Dokumentation
+```
+
+## API-Endpunkte (lokal → Node.js, Produktion → PHP)
+
+| Action | Was es tut |
+|---|---|
+| `check` | Login-Status prüfen |
+| `get_config` | site-override.json lesen |
+| `save_config` | site-override.json schreiben |
+| `list_images?artwork_id=X` | Bilder eines Werks auflisten |
+| `upload_image` | Bild zu Werk hochladen |
+| `delete_image` | Bild in archiv/ verschieben |
+| `upload_slider` | Hero-Slider Bild hochladen |
+| `delete_slider` | Slider-Bild in archiv/ verschieben |
+
+## Deploy auf ateliermiro.de
+
+1. `npm run build` → erzeugt `dist/`
+2. FTP-Zugangsdaten in `deploy.sh` eintragen
+3. `./deploy.sh` ausführen
+
+
 ## PFLICHTREGELN – IMMER EINHALTEN
 
 ### Vor jeder Aktion
@@ -62,8 +118,16 @@ projekt: rinder, mausefalle, sonnensegel, tueren, commode
 ## Entscheidung-Bunt und Entscheidung-Weiss
 GETRENNTE Werke – niemals zusammenführen!
 
+## Bereits erledigt (diese Session)
+- Logo: "ATELIER / MIROSLAV" in Bodoni Moda im Header
+- Hero: "Miroslav Wiedermann" entfernt, Kunstwerk steht im Vordergrund
+- Hero: dunkler Gradient → Text immer lesbar auf jedem Bild
+- Hero: Dots + Pfeile weiß (kein Gold mehr)
+- Node.js API-Server gebaut (server/api.mjs) → Upload funktioniert lokal
+- npm run dev startet jetzt API + Vite zusammen
+
 ## Offene Aufgaben
 1. FTP-Zugangsdaten in deploy.sh eintragen → `./deploy.sh` ausführen
-2. Morse Text: echte Fotos des Werks aufnehmen und in gallery/morse-text/ ablegen
-3. Mehrsprachigkeit (DE/EN/ES/FR/AR/CS/ZH) mit react-i18next
-4. Logo einbauen (aktuell nur "MW"-Text im Header)
+2. Hero-Slider: andere/bessere Bilder wählen (via Admin-Panel → Hero-Tab)
+3. Morse Text: echte Fotos des Werks aufnehmen → gallery/morse-text/
+4. Mehrsprachigkeit (DE/EN/ES/FR/AR/CS/ZH) mit react-i18next

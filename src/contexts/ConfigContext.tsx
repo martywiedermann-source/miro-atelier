@@ -7,15 +7,35 @@ export interface ArtworkOverride {
   hiddenImages?: string[];
   imageOrder?: string[];
   status?: "available" | "sold" | "on-loan" | "not-for-sale";
-  titleOverride?: string;
-  yearOverride?: number | null;
-  dimensionsOverride?: string;
-  mediumOverride?: string;
+  title?: string;
+  year?: number | null;
+  medium?: string;
+  dimensions?: string;
+  description?: string;
+  category?: "relief" | "objekt" | "installation" | "projekt";
+  seoTitle?: string;
+  seoDescription?: string;
+}
+
+export interface NewArtwork {
+  id: string;
+  title: string;
+  year: number | null;
+  medium: string;
+  dimensions: string;
+  category: "relief" | "objekt" | "installation" | "projekt";
+  images: string[];
+  description: string;
+  status: "available" | "sold" | "on-loan" | "not-for-sale";
+  visible: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
 }
 
 export interface SiteOverride {
   version: number;
   artworks?: Record<string, ArtworkOverride>;
+  newArtworks?: NewArtwork[];
   pages?: Partial<Record<keyof typeof siteConfig.pages, { enabled?: boolean }>>;
   events?: ArtEvent[];
   heroSlides?: Array<{ image: string; title: string; year: string }>;

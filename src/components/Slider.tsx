@@ -95,12 +95,12 @@ const Slider = ({
                 className="w-full h-full object-cover"
                 loading={i === 0 ? "eager" : "lazy"}
               />
-              {/* Warm gradient overlay from bottom */}
+              {/* Dark gradient overlay — bottom for caption, subtle overall for text readability */}
               <div
                 className="absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(to top, rgba(250,250,248,0.6) 0%, rgba(250,250,248,0) 50%)",
+                    "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.1) 100%)",
                 }}
               />
               {/* Slide caption bottom-left */}
@@ -111,10 +111,10 @@ const Slider = ({
                   transition={{ delay: 0.5, duration: 0.6 }}
                   className="absolute bottom-24 left-8 md:left-16 z-10"
                 >
-                  <p className="font-display text-lg md:text-xl text-foreground/80">
+                  <p className="font-display text-lg md:text-xl text-white/80">
                     {slide.title}
                     {slide.year && (
-                      <span className="font-mono text-xs text-muted-foreground ml-3">{slide.year}</span>
+                      <span className="font-mono text-xs text-white/50 ml-3">{slide.year}</span>
                     )}
                   </p>
                 </motion.div>
@@ -140,14 +140,14 @@ const Slider = ({
           <>
             <button
               onClick={scrollPrev}
-              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center text-foreground/60 hover:text-foreground transition-colors"
+              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center text-white/60 hover:text-white transition-colors"
               aria-label="Previous slide"
             >
               <ChevronLeft size={24} />
             </button>
             <button
               onClick={scrollNext}
-              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center text-foreground/60 hover:text-foreground transition-colors"
+              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center text-white/60 hover:text-white transition-colors"
               aria-label="Next slide"
             >
               <ChevronRight size={24} />
@@ -164,8 +164,8 @@ const Slider = ({
                 onClick={() => scrollTo(i)}
                 className={`w-2 h-2 rounded-full transition-all duration-500 ${
                   activeIndex === i
-                    ? "bg-primary w-6"
-                    : "bg-foreground/20 hover:bg-foreground/40"
+                    ? "bg-white w-6"
+                    : "bg-white/30 hover:bg-white/60"
                 }`}
                 aria-label={`Go to slide ${i + 1}`}
               />
@@ -193,15 +193,15 @@ const Slider = ({
                 className="absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(to top, rgba(250,250,248,0.6) 0%, rgba(250,250,248,0) 50%)",
+                    "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.1) 100%)",
                 }}
               />
               {slide.title && (
                 <div className="absolute bottom-24 left-8 md:left-16">
-                  <p className="font-display text-lg md:text-xl text-foreground/80">
+                  <p className="font-display text-lg md:text-xl text-white/80">
                     {slide.title}
                     {slide.year && (
-                      <span className="font-mono text-xs text-muted-foreground ml-3">{slide.year}</span>
+                      <span className="font-mono text-xs text-white/50 ml-3">{slide.year}</span>
                     )}
                   </p>
                 </div>
@@ -217,14 +217,14 @@ const Slider = ({
         <>
           <button
             onClick={scrollPrev}
-            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center text-foreground/60 hover:text-foreground transition-colors"
+            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center text-white/60 hover:text-white transition-colors"
             aria-label="Previous slide"
           >
             <ChevronLeft size={24} />
           </button>
           <button
             onClick={scrollNext}
-            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center text-foreground/60 hover:text-foreground transition-colors"
+            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center text-white/60 hover:text-white transition-colors"
             aria-label="Next slide"
           >
             <ChevronRight size={24} />
@@ -240,8 +240,8 @@ const Slider = ({
               onClick={() => scrollTo(i)}
               className={`w-2 h-2 rounded-full transition-all duration-500 ${
                 activeIndex === i
-                  ? "bg-primary w-6"
-                  : "bg-foreground/20 hover:bg-foreground/40"
+                  ? "bg-white w-6"
+                  : "bg-white/30 hover:bg-white/60"
               }`}
               aria-label={`Go to slide ${i + 1}`}
             />

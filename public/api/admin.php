@@ -221,6 +221,26 @@ switch ($action) {
         rename($src, $archiveDir . $filename);
         ok();
 
+    // ── Logo hochladen ────────────────────────────────────────────────────────
+    case 'upload_logo':
+        requireAuth();
+        $file = $_FILES['image'] ?? null;
+        if (!$file || $file['error'] !== UPLOAD_ERR_OK) err('Upload fehlgeschlagen');
+        if ($file['size'] > MAX_MB * 1024 * 1024) err('Datei zu groß');
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime  = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        $mimeMap = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/svg+xml' => 'svg'];
+        if (!isset($mimeMap[$mime])) err('Nur JPG, PNG, WEBP oder SVG erlaubt');
+
+        $logoDir = SITE_ROOT . '/logo/';
+        if (!is_dir($logoDir)) mkdir($logoDir, 0755, true);
+
+        $filename = 'logo-dark.' . $mimeMap[$mime];
+        move_uploaded_file($file['tmp_name'], $logoDir . $filename);
+        ok(['path' => '/logo/' . $filename]);
+
     // ── Kontaktformular senden ────────────────────────────────────────────────
     case 'send_mail':
         // Kein Login erforderlich (öffentlicher Endpunkt)

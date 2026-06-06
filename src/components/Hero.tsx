@@ -27,34 +27,24 @@ const Hero = () => {
       crossfade
       overlay={
         <div className="text-center px-6 z-20 pointer-events-none">
-          {/* Staggered text reveal */}
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8 }}
-            className="font-mono text-xs uppercase tracking-[0.4em] text-primary mb-6"
+            className="font-mono text-xs uppercase tracking-[0.4em] text-white/80 mb-10"
           >
             {effectiveOverride.hero?.tagline ?? "Künstler · Relief · Filz"}
           </motion.p>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
-            className="font-bodoni text-[10vw] md:text-[7vw] lg:text-[5vw] font-normal leading-[0.95] tracking-tight text-foreground mb-8"
-          >
-            Miroslav Wiedermann
-          </motion.h1>
-
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.4, duration: 0.8 }}
+            transition={{ delay: 0.8, duration: 0.8 }}
             className="pointer-events-auto"
           >
             <button
               onClick={scrollToContent}
-              className="inline-block font-mono text-xs uppercase tracking-[0.3em] text-foreground border border-foreground/30 px-10 py-4 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-500"
+              className="inline-block font-mono text-xs uppercase tracking-[0.3em] text-white border border-white/40 px-10 py-4 hover:bg-white hover:text-foreground transition-all duration-500"
             >
               {effectiveOverride.hero?.ctaText ?? "Zu den Arbeiten"}
             </button>

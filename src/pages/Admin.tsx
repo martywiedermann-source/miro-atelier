@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { artworks } from "@/lib/artworks";
 import { events as staticEvents, type ArtEvent } from "@/lib/events";
 import { siteConfig } from "@/lib/siteConfig";
-import { useConfig, type SiteOverride, type ArtworkOverride } from "@/contexts/ConfigContext";
+import { useConfig, type SiteOverride, type ArtworkOverride, type NewArtwork } from "@/contexts/ConfigContext";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -193,6 +193,11 @@ const Admin = () => {
   const [replacingImage, setReplacingImage] = useState<{ artworkId: string; src: string } | null>(null);
   const [syncingArtwork, setSyncingArtwork] = useState<string | null>(null);
   const dragFrom = useRef<{ artworkId: string; index: number } | null>(null);
+
+  // Logo state
+  const [logoPath, setLogoPath] = useState<string>("/logo/logo-dark.jpg");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoRef = useRef<HTMLInputElement | null>(null);
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
 
   // Event state
@@ -453,6 +458,25 @@ const Admin = () => {
     }
   }
 
+  async function handleLogoUpload(file: File) {
+    const validErr = validateImageFile(file);
+    if (validErr) { toast.error(validErr); return; }
+    setUploadingLogo(true);
+    const form = new FormData();
+    form.append("image", file);
+    try {
+      const res = await apiUpload("upload_logo", form);
+      if (res.ok && res.path) {
+        setLogoPath((res.path as string) + "?t=" + Date.now());
+        toast.success("Logo hochgeladen");
+      } else {
+        toast.error((res.error as string) ?? "Upload fehlgeschlagen");
+      }
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
   function moveHeroSlide(from: number, to: number) {
     const next = [...heroSlides];
     const [item] = next.splice(from, 1);
@@ -541,29 +565,90 @@ const Admin = () => {
 
   // ── Artwork metadata helpers ────────────────────────────────────────────────
 
-  function getArtworkMetaField<K extends "titleOverride" | "yearOverride" | "dimensionsOverride" | "mediumOverride">(
-    id: string, field: K, fallback: string
-  ): string {
-    const val = draftOverride.artworks?.[id]?.[field];
+  function getArtworkMetaField(id: string, field: keyof ArtworkOverride, fallback: string): string {
+    const val = draftOverride.artworks?.[id]?.[field as keyof ArtworkOverride];
     return val != null ? String(val) : fallback;
   }
 
-  function setArtworkMetaField(
-    id: string,
-    field: "titleOverride" | "yearOverride" | "dimensionsOverride" | "mediumOverride",
-    value: string
-  ) {
-    const parsed = field === "yearOverride"
+  function setArtworkMetaField(id: string, field: keyof ArtworkOverride, value: string) {
+    const parsed = field === "year"
       ? (value === "" ? null : Number(value) || null)
       : value || undefined;
-    const next: typeof draftOverride = {
+    autoSave({
       ...draftOverride,
       artworks: {
         ...draftOverride.artworks,
         [id]: { ...draftOverride.artworks?.[id], [field]: parsed },
       },
-    };
-    autoSave(next);
+    });
+  }
+
+  // ── New artwork helpers ─────────────────────────────────────────────────────
+
+  const EMPTY_NEW_ARTWORK: Omit<NewArtwork, "id"> = {
+    title: "", year: null, medium: "", dimensions: "",
+    category: "relief", images: [], description: "",
+    status: "available", visible: true,
+  };
+
+  const [newArtworkForm, setNewArtworkForm] = useState<NewArtwork | null>(null);
+  const [newArtworkErrors, setNewArtworkErrors] = useState<Partial<Record<keyof NewArtwork, string>>>({});
+  const [newArtworkUploading, setNewArtworkUploading] = useState(false);
+  const newArtworkUploadRef = useRef<HTMLInputElement>(null);
+
+  function startNewArtwork() {
+    setNewArtworkForm({ id: `werk-${Date.now()}`, ...EMPTY_NEW_ARTWORK });
+    setNewArtworkErrors({});
+  }
+
+  function validateNewArtwork(a: NewArtwork): boolean {
+    const errs: Partial<Record<keyof NewArtwork, string>> = {};
+    if (!a.title.trim()) errs.title = "Pflichtfeld";
+    if (!a.id.trim() || !/^[a-z0-9-]+$/.test(a.id)) errs.id = "Nur Kleinbuchstaben, Zahlen und Bindestriche";
+    const allIds = [
+      ...artworks.map((w) => w.id),
+      ...(draftOverride.newArtworks ?? []).map((w) => w.id),
+    ];
+    if (allIds.includes(a.id) && newArtworkForm?.id !== a.id) errs.id = "ID existiert bereits";
+    setNewArtworkErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  async function saveNewArtwork(a: NewArtwork) {
+    if (!validateNewArtwork(a)) return;
+    const existing = draftOverride.newArtworks ?? [];
+    const idx = existing.findIndex((w) => w.id === a.id);
+    const updated = idx >= 0
+      ? existing.map((w, i) => i === idx ? a : w)
+      : [...existing, a];
+    await autoSave({ ...draftOverride, newArtworks: updated });
+    setNewArtworkForm(null);
+    toast.success("Werk gespeichert");
+  }
+
+  function deleteNewArtwork(id: string) {
+    if (!window.confirm("Werk wirklich löschen? Bilder auf dem Server bleiben erhalten.")) return;
+    const updated = (draftOverride.newArtworks ?? []).filter((w) => w.id !== id);
+    autoSave({ ...draftOverride, newArtworks: updated });
+  }
+
+  async function handleNewArtworkImageUpload(file: File, current: NewArtwork) {
+    const validErr = validateImageFile(file);
+    if (validErr) { toast.error(validErr); return; }
+    setNewArtworkUploading(true);
+    const form = new FormData();
+    form.append("artwork_id", current.id);
+    form.append("image", file);
+    try {
+      const res = await apiUpload("upload_image", form);
+      if (res.ok && res.path) {
+        setNewArtworkForm({ ...current, images: [...current.images, res.path as string] });
+        toast.success("Bild hochgeladen");
+      } else {
+        toast.error((res.error as string) ?? "Upload fehlgeschlagen");
+      }
+    } catch (e) { handleApiError(e); }
+    finally { setNewArtworkUploading(false); }
   }
 
   // ── Server image sync ───────────────────────────────────────────────────────
@@ -701,9 +786,15 @@ const Admin = () => {
           <section>
             <div className="flex items-center justify-between mb-4">
               <SectionHeading>Werke</SectionHeading>
-              <span className="font-mono text-xs text-muted-foreground">
-                {visibleCount} / {artworks.length} sichtbar
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-xs text-muted-foreground">
+                  {visibleCount} / {artworks.length + (draftOverride.newArtworks?.length ?? 0)} sichtbar
+                </span>
+                <Button variant="outline" size="sm" onClick={startNewArtwork}
+                  className="font-mono text-xs uppercase tracking-[0.15em]">
+                  + Neues Werk
+                </Button>
+              </div>
             </div>
             <div className="space-y-1">
               {artworks.map((artwork) => {
@@ -832,49 +923,71 @@ const Admin = () => {
                         )}
 
                         {/* Metadaten-Formular */}
-                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/30">
-                          <div className="col-span-2 flex items-center gap-2">
-                            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground w-14 shrink-0">Titel</span>
+                        <div className="space-y-2 pt-2 border-t border-border/30">
+                          <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Metadaten</p>
+                          {[
+                            { field: "title" as const,       label: "Titel",   placeholder: artwork.title,                type: "text"   },
+                            { field: "medium" as const,      label: "Technik", placeholder: artwork.medium || "Filz, Acryl", type: "text" },
+                            { field: "dimensions" as const,  label: "Maße",    placeholder: artwork.dimensions || "165 × 125 cm", type: "text" },
+                            { field: "year" as const,        label: "Jahr",    placeholder: String(artwork.year ?? ""),   type: "number" },
+                          ].map(({ field, label, placeholder, type }) => (
+                            <div key={field} className="flex items-center gap-2">
+                              <span className="font-mono text-[10px] text-muted-foreground w-16 shrink-0">{label}</span>
+                              <input
+                                type={type}
+                                defaultValue={getArtworkMetaField(artwork.id, field, placeholder)}
+                                key={`${field}-${artwork.id}`}
+                                onBlur={(e) => setArtworkMetaField(artwork.id, field, e.target.value)}
+                                placeholder={placeholder}
+                                className="flex-1 font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                              />
+                            </div>
+                          ))}
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-[10px] text-muted-foreground w-16 shrink-0">Kategorie</span>
+                            <select
+                              defaultValue={getArtworkMetaField(artwork.id, "category", artwork.category)}
+                              key={`cat-${artwork.id}`}
+                              onChange={(e) => setArtworkMetaField(artwork.id, "category", e.target.value)}
+                              className="flex-1 font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                            >
+                              <option value="relief">Relief</option>
+                              <option value="objekt">Objekt</option>
+                              <option value="installation">Installation</option>
+                              <option value="projekt">Projekt</option>
+                            </select>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="font-mono text-[10px] text-muted-foreground w-16 shrink-0 pt-1">Beschreibung</span>
+                            <textarea
+                              defaultValue={getArtworkMetaField(artwork.id, "description", artwork.description)}
+                              key={`desc-${artwork.id}`}
+                              onBlur={(e) => setArtworkMetaField(artwork.id, "description", e.target.value)}
+                              placeholder="Kurze Beschreibung des Werks…"
+                              rows={2}
+                              className="flex-1 font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2 pt-1">
+                            <span className="font-mono text-[10px] text-muted-foreground w-16 shrink-0">SEO-Titel</span>
                             <input
                               type="text"
-                              defaultValue={getArtworkMetaField(artwork.id, "titleOverride", artwork.title)}
-                              key={`title-${artwork.id}`}
-                              onBlur={(e) => setArtworkMetaField(artwork.id, "titleOverride", e.target.value)}
-                              placeholder={artwork.title}
+                              defaultValue={getArtworkMetaField(artwork.id, "seoTitle", "")}
+                              key={`seo-title-${artwork.id}`}
+                              onBlur={(e) => setArtworkMetaField(artwork.id, "seoTitle", e.target.value)}
+                              placeholder={`${artwork.title} – Miroslav Wiedermann`}
                               className="flex-1 font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                             />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground w-14 shrink-0">Jahr</span>
-                            <input
-                              type="number"
-                              defaultValue={getArtworkMetaField(artwork.id, "yearOverride", String(artwork.year ?? ""))}
-                              key={`year-${artwork.id}`}
-                              onBlur={(e) => setArtworkMetaField(artwork.id, "yearOverride", e.target.value)}
-                              placeholder={String(artwork.year ?? "")}
-                              className="w-full font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
-                            />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground w-14 shrink-0">Maße</span>
-                            <input
-                              type="text"
-                              defaultValue={getArtworkMetaField(artwork.id, "dimensionsOverride", artwork.dimensions)}
-                              key={`dim-${artwork.id}`}
-                              onBlur={(e) => setArtworkMetaField(artwork.id, "dimensionsOverride", e.target.value)}
-                              placeholder={artwork.dimensions || "z.B. 165 × 125 cm"}
-                              className="w-full font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
-                            />
-                          </div>
-                          <div className="col-span-2 flex items-center gap-2">
-                            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground w-14 shrink-0">Technik</span>
-                            <input
-                              type="text"
-                              defaultValue={getArtworkMetaField(artwork.id, "mediumOverride", artwork.medium)}
-                              key={`med-${artwork.id}`}
-                              onBlur={(e) => setArtworkMetaField(artwork.id, "mediumOverride", e.target.value)}
-                              placeholder={artwork.medium || "z.B. Filz, Acryl"}
-                              className="flex-1 font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                          <div className="flex items-start gap-2">
+                            <span className="font-mono text-[10px] text-muted-foreground w-16 shrink-0 pt-1">SEO-Text</span>
+                            <textarea
+                              defaultValue={getArtworkMetaField(artwork.id, "seoDescription", "")}
+                              key={`seo-desc-${artwork.id}`}
+                              onBlur={(e) => setArtworkMetaField(artwork.id, "seoDescription", e.target.value)}
+                              placeholder="Kurzbeschreibung für Suchmaschinen (max. 160 Zeichen)"
+                              rows={2}
+                              className="flex-1 font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                             />
                           </div>
                         </div>
@@ -912,6 +1025,153 @@ const Admin = () => {
                 );
               })}
             </div>
+
+            {/* ── Neue Werke (aus site-override.json) ── */}
+            {(draftOverride.newArtworks ?? []).length > 0 && (
+              <div className="mt-6">
+                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">Manuell angelegte Werke</p>
+                <div className="space-y-1">
+                  {(draftOverride.newArtworks ?? []).map((nw) => (
+                    <div key={nw.id} className="flex items-center gap-3 py-2 border-b border-border/40">
+                      {nw.images[0] ? (
+                        <img src={nw.images[0]} alt={nw.title} className="w-10 h-10 object-cover shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 bg-border/30 shrink-0 flex items-center justify-center">
+                          <span className="font-mono text-[8px] text-muted-foreground">–</span>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-body text-sm truncate">{nw.title}</p>
+                        <p className="font-mono text-[10px] text-muted-foreground">{nw.year ?? "–"} · {nw.category} · {nw.images.length} Bild{nw.images.length !== 1 ? "er" : ""}</p>
+                      </div>
+                      <Button variant="outline" size="sm"
+                        className="font-mono text-[10px] uppercase tracking-wider"
+                        onClick={() => { setNewArtworkForm({ ...nw }); setNewArtworkErrors({}); }}>
+                        Bearbeiten
+                      </Button>
+                      <Button variant="outline" size="sm"
+                        className="font-mono text-[10px] uppercase tracking-wider text-destructive hover:bg-destructive/10"
+                        onClick={() => deleteNewArtwork(nw.id)}>
+                        Löschen
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Neues Werk Formular ── */}
+            {newArtworkForm && (
+              <div className="mt-6 p-5 border border-primary/30 bg-surface-warm">
+                <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-primary mb-5">
+                  {(draftOverride.newArtworks ?? []).find((w) => w.id === newArtworkForm.id) ? "Werk bearbeiten" : "Neues Werk anlegen"}
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="font-mono text-[10px] uppercase tracking-wider">Titel *</Label>
+                    <Input value={newArtworkForm.title}
+                      onChange={(e) => setNewArtworkForm({ ...newArtworkForm, title: e.target.value })}
+                      className={`mt-1 ${newArtworkErrors.title ? "border-destructive" : ""}`} />
+                    {newArtworkErrors.title && <p className="font-mono text-[10px] text-destructive mt-1">{newArtworkErrors.title}</p>}
+                  </div>
+                  <div>
+                    <Label className="font-mono text-[10px] uppercase tracking-wider">ID (URL-Slug) *</Label>
+                    <Input value={newArtworkForm.id}
+                      onChange={(e) => setNewArtworkForm({ ...newArtworkForm, id: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") })}
+                      placeholder="mein-neues-werk"
+                      className={`mt-1 font-mono text-xs ${newArtworkErrors.id ? "border-destructive" : ""}`} />
+                    {newArtworkErrors.id
+                      ? <p className="font-mono text-[10px] text-destructive mt-1">{newArtworkErrors.id}</p>
+                      : <p className="font-mono text-[10px] text-muted-foreground mt-1">Nur Kleinbuchstaben und Bindestriche — wird als Ordnername verwendet</p>
+                    }
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="font-mono text-[10px] uppercase tracking-wider">Jahr</Label>
+                      <Input type="number" value={newArtworkForm.year ?? ""}
+                        onChange={(e) => setNewArtworkForm({ ...newArtworkForm, year: e.target.value ? Number(e.target.value) : null })}
+                        placeholder="2024" className="mt-1" />
+                    </div>
+                    <div>
+                      <Label className="font-mono text-[10px] uppercase tracking-wider">Kategorie</Label>
+                      <select value={newArtworkForm.category}
+                        onChange={(e) => setNewArtworkForm({ ...newArtworkForm, category: e.target.value as NewArtwork["category"] })}
+                        className="w-full mt-1 h-10 px-3 font-body text-sm border border-input bg-background focus:outline-none focus:ring-1 focus:ring-primary">
+                        <option value="relief">Relief</option>
+                        <option value="objekt">Objekt</option>
+                        <option value="installation">Installation</option>
+                        <option value="projekt">Projekt</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="font-mono text-[10px] uppercase tracking-wider">Technik / Medium</Label>
+                    <Input value={newArtworkForm.medium}
+                      onChange={(e) => setNewArtworkForm({ ...newArtworkForm, medium: e.target.value })}
+                      placeholder="Filz, Acryl" className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="font-mono text-[10px] uppercase tracking-wider">Maße</Label>
+                    <Input value={newArtworkForm.dimensions}
+                      onChange={(e) => setNewArtworkForm({ ...newArtworkForm, dimensions: e.target.value })}
+                      placeholder="165 × 125 cm" className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="font-mono text-[10px] uppercase tracking-wider">Beschreibung</Label>
+                    <textarea value={newArtworkForm.description}
+                      onChange={(e) => setNewArtworkForm({ ...newArtworkForm, description: e.target.value })}
+                      placeholder="Kurze Beschreibung des Werks…"
+                      rows={3}
+                      className="w-full mt-1 font-body text-sm border border-input bg-background px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+                  </div>
+                  <div>
+                    <Label className="font-mono text-[10px] uppercase tracking-wider">Status</Label>
+                    <select value={newArtworkForm.status}
+                      onChange={(e) => setNewArtworkForm({ ...newArtworkForm, status: e.target.value as NewArtwork["status"] })}
+                      className="w-full mt-1 h-10 px-3 font-body text-sm border border-input bg-background focus:outline-none focus:ring-1 focus:ring-primary">
+                      <option value="available">Verfügbar</option>
+                      <option value="sold">Verkauft</option>
+                      <option value="on-loan">Verliehen</option>
+                      <option value="not-for-sale">Nicht käuflich</option>
+                    </select>
+                  </div>
+                  {/* Bilder hochladen */}
+                  <div>
+                    <Label className="font-mono text-[10px] uppercase tracking-wider">Bilder</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {newArtworkForm.images.map((src, i) => (
+                        <div key={src} className="relative group/img">
+                          <img src={src} alt={`Bild ${i + 1}`} className="w-16 h-16 object-cover" />
+                          <button
+                            onClick={() => setNewArtworkForm({ ...newArtworkForm, images: newArtworkForm.images.filter((_, idx) => idx !== i) })}
+                            className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white text-sm"
+                          >✕</button>
+                        </div>
+                      ))}
+                    </div>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                      ref={newArtworkUploadRef}
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleNewArtworkImageUpload(f, newArtworkForm); e.target.value = ""; }} />
+                    <Button variant="outline" size="sm" className="font-mono text-[10px] uppercase tracking-wider mt-2"
+                      disabled={newArtworkUploading || !newArtworkForm.id}
+                      onClick={() => newArtworkUploadRef.current?.click()}>
+                      {newArtworkUploading ? "Lädt hoch..." : "+ Bild hochladen"}
+                    </Button>
+                    {!newArtworkForm.id && <p className="font-mono text-[10px] text-muted-foreground mt-1">Erst ID eingeben, dann Bilder hochladen</p>}
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-5">
+                  <Button onClick={() => saveNewArtwork(newArtworkForm)}
+                    className="font-mono text-xs uppercase tracking-[0.15em] bg-primary text-primary-foreground hover:bg-gold-hover">
+                    Speichern
+                  </Button>
+                  <Button variant="outline" onClick={() => { setNewArtworkForm(null); setNewArtworkErrors({}); }}
+                    className="font-mono text-xs uppercase tracking-[0.15em]">
+                    Abbrechen
+                  </Button>
+                </div>
+              </div>
+            )}
           </section>
         )}
 
@@ -1143,6 +1403,39 @@ const Admin = () => {
             <p className="font-body text-sm text-muted-foreground mb-6">
               Farben werden sofort auf der Seite sichtbar. Mit "Speichern" werden sie dauerhaft.
             </p>
+
+            {/* Logo Upload */}
+            <div className="mb-8 p-4 border border-border rounded-sm">
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-foreground mb-3">Logo</p>
+              <div className="flex items-center gap-6">
+                <img
+                  src={logoPath}
+                  alt="Logo"
+                  className="h-16 w-auto object-contain bg-black/5 p-2 rounded"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+                <div>
+                  <Button
+                    variant="outline" size="sm"
+                    className="font-mono text-[10px] uppercase tracking-wider"
+                    disabled={uploadingLogo}
+                    onClick={() => logoRef.current?.click()}
+                  >
+                    {uploadingLogo ? "Lädt hoch…" : "Logo ersetzen"}
+                  </Button>
+                  <p className="font-mono text-[10px] text-muted-foreground mt-1">JPG, PNG, WEBP oder SVG · max. 10 MB</p>
+                </div>
+              </div>
+              <input
+                ref={logoRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); e.target.value = ""; }}
+              />
+            </div>
+
+            <Separator className="mb-6" />
 
             <div className="space-y-5">
               {[

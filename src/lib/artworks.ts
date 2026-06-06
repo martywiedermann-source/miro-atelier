@@ -9,7 +9,7 @@ export interface Artwork {
   images: string[];
   image: string;
   description: string;
-  status?: "available" | "sold" | "on-loan";
+  status?: "available" | "sold" | "on-loan" | "not-for-sale";
   visible?: boolean;
   hiddenImages?: string[];
 }
