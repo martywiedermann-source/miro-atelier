@@ -3,15 +3,34 @@ import { motion } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
 import ArtworkCard from "@/components/ArtworkCard";
 import Lightbox from "@/components/Lightbox";
-import { artworks, categories, Artwork } from "@/lib/artworks";
+import { categories, Artwork } from "@/lib/artworks";
+import { useVisibleArtworks } from "@/lib/hooks";
+import { usePageTitle, useJsonLd } from "@/lib/seo";
 
 const Gallery = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
 
+  usePageTitle("Werke");
+  useJsonLd("schema-artist", {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Miroslav Wiedermann",
+    "jobTitle": "Bildender Künstler",
+    "url": "https://www.ateliermiro.de",
+    "knowsAbout": ["Relief-Malerei", "Filzrelief", "Expressive Malerei", "Figurativismus"],
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Gelnhausen",
+      "addressRegion": "Hessen",
+      "addressCountry": "DE"
+    }
+  });
+
+  const visibleArtworks = useVisibleArtworks();
   const filtered = activeCategory === "all"
-    ? artworks
-    : artworks.filter((a) => a.category === activeCategory);
+    ? visibleArtworks
+    : visibleArtworks.filter((a) => a.category === activeCategory);
 
   return (
     <PageTransition>
@@ -25,10 +44,10 @@ const Gallery = () => {
             className="mb-16"
           >
             <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-4">
-              Gallery
+              Galerie
             </p>
             <h1 className="font-display text-5xl md:text-7xl font-light text-foreground">
-              Works
+              Werke
             </h1>
           </motion.div>
 

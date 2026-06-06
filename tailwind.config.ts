@@ -17,6 +17,7 @@ export default {
         display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
         body: ['"Outfit"', 'system-ui', 'sans-serif'],
         mono: ['"Space Mono"', 'monospace'],
+        abel: ['"Abel"', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

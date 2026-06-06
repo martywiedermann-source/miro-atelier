@@ -1,4 +1,11 @@
-<!-- REPLACE: swap this file with your actual greyscale logo (SVG recommended, max 200x60px) -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" width="120" height="40">
-  <text x="0" y="32" font-family="'Cormorant Garamond', Georgia, serif" font-size="32" font-weight="600" fill="#6B6B6B" letter-spacing="2">MW</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60">
+  <text
+    x="60" y="48"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="54"
+    font-weight="300"
+    letter-spacing="-2"
+    text-anchor="middle"
+    fill="#c4a882"
+  >MW</text>
 </svg>

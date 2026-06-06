@@ -3,9 +3,12 @@ import { Link } from "react-router-dom";
 import PageTransition from "@/components/PageTransition";
 import EventCard from "@/components/EventCard";
 import SectionLabel from "@/components/SectionLabel";
-import { events } from "@/lib/events";
+import { useEffectiveEvents } from "@/lib/hooks";
+import { usePageTitle } from "@/lib/seo";
 
 const Events = () => {
+  usePageTitle("Ausstellungen");
+  const events = useEffectiveEvents();
   const upcoming = events.filter((e) => e.upcoming);
   const past = events.filter((e) => !e.upcoming);
 
@@ -21,25 +24,33 @@ const Events = () => {
             className="mb-20"
           >
             <h1 className="font-display text-5xl md:text-7xl font-light text-foreground">
-              Exhibitions & Events
+              Ausstellungen
             </h1>
           </motion.div>
 
-          {/* Upcoming */}
+          {/* Bevorstehend */}
           <section className="mb-32">
-            <SectionLabel label="Upcoming" />
-            {upcoming.map((event, i) => (
-              <EventCard key={event.id} event={event} index={i} />
-            ))}
+            <SectionLabel label="Bevorstehend" />
+            {upcoming.length === 0 ? (
+              <p className="font-body text-sm text-muted-foreground py-8">
+                Derzeit keine Ausstellungen angekündigt.
+              </p>
+            ) : (
+              upcoming.map((event, i) => (
+                <EventCard key={event.id} event={event} index={i} />
+              ))
+            )}
           </section>
 
-          {/* Past */}
-          <section className="mb-24">
-            <SectionLabel label="Past Exhibitions" />
-            {past.map((event, i) => (
-              <EventCard key={event.id} event={event} index={i} compact />
-            ))}
-          </section>
+          {/* Vergangene */}
+          {past.length > 0 && (
+            <section className="mb-24">
+              <SectionLabel label="Vergangene Ausstellungen" />
+              {past.map((event, i) => (
+                <EventCard key={event.id} event={event} index={i} compact />
+              ))}
+            </section>
+          )}
 
           {/* CTA */}
           <motion.div
@@ -50,13 +61,13 @@ const Events = () => {
             className="text-center py-16 border-t border-border"
           >
             <p className="font-display text-2xl text-foreground mb-8">
-              Interested in collaborating?
+              Interesse an einer Zusammenarbeit?
             </p>
             <Link
               to="/contact?inquiry=exhibition"
               className="inline-block font-mono text-xs uppercase tracking-[0.3em] bg-primary text-primary-foreground px-10 py-4 hover:bg-gold-hover transition-all duration-500"
             >
-              Propose an Exhibition or Event
+              Ausstellung vorschlagen
             </Link>
           </motion.div>
         </div>

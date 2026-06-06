@@ -1,81 +1,78 @@
 import { Link } from "react-router-dom";
-import { Instagram, Linkedin } from "lucide-react";
+import { siteConfig } from "@/lib/siteConfig";
 
 const Footer = () => {
   return (
     <footer className="border-t border-primary/20 bg-surface-warm">
       <div className="container mx-auto px-6 lg:px-12 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
-          {/* Column 1: Logo + Tagline */}
+          {/* Spalte 1: Logo + Kurztext */}
           <div className="space-y-4">
-            {/* REPLACE: swap /logo/logo-grey.svg with your actual greyscale logo */}
-            <Link to="/" className="inline-block w-[100px] h-[34px]">
-              <img
-                src="/logo/logo-grey.svg"
-                alt="Miroslav Wiedermann"
-                className="w-full h-full object-contain"
-              />
+            <Link to="/" className="flex items-center gap-3 group">
+              <img src="/logo/logo-grey.svg" alt="MW" className="w-10 h-auto opacity-80 group-hover:opacity-100 transition-opacity" />
+              <div className="flex flex-col leading-none">
+                <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-primary group-hover:text-gold-hover transition-colors">
+                  Atelier
+                </span>
+                <span className="font-display text-xl font-light text-foreground tracking-wide">
+                  Miroslav Wiedermann
+                </span>
+              </div>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              {/* PLACEHOLDER: Replace with actual tagline */}
-              Visual artist and speaker exploring form, tension, and silence.
+              Künstler. Relief. Filz.<br />
+              Atelier in Gelnhausen Hailer.
             </p>
           </div>
 
-          {/* Column 2: Navigation */}
+          {/* Spalte 2: Navigation */}
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-foreground mb-5">Navigation</p>
             <div className="flex flex-col gap-3">
-              <Link to="/works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Works</Link>
-              <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</Link>
-              <Link to="/events" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Events</Link>
-              <Link to="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</Link>
+              {siteConfig.pages.works.enabled && <Link to="/works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Werke</Link>}
+              {siteConfig.pages.about.enabled && <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Über</Link>}
+              {siteConfig.pages.events.enabled && <Link to="/events" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Ausstellungen</Link>}
+              {siteConfig.pages.contact.enabled && <Link to="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Kontakt</Link>}
+              <Link to="/impressum" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Impressum</Link>
             </div>
           </div>
 
-          {/* Column 3: Social */}
+          {/* Spalte 3: Kontakt */}
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-foreground mb-5">Connect</p>
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-foreground mb-5">Kontakt</p>
+            <address className="not-italic flex flex-col gap-2 text-sm text-muted-foreground">
+              <span>Miroslav Wiedermann</span>
+              <span>Berkaer Str. 19</span>
+              <span>99837 Werra-Suhl-Tal</span>
+              <a href="tel:+491755933703" className="hover:text-foreground transition-colors mt-1">
+                +49 175 5933703
+              </a>
+              <a href="mailto:miro@ateliermiro.de" className="hover:text-foreground transition-colors">
+                miro@ateliermiro.de
+              </a>
+            </address>
+          </div>
+
+          {/* Spalte 4: Rechtliches */}
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-foreground mb-5">Rechtliches</p>
             <div className="flex flex-col gap-3">
-              {/* PLACEHOLDER: Replace with actual social links */}
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                <Instagram size={16} /> Instagram
-              </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                <Linkedin size={16} /> LinkedIn
-              </a>
+              <Link to="/impressum"   className="text-sm text-muted-foreground hover:text-foreground transition-colors">Impressum</Link>
+              <Link to="/datenschutz" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Datenschutz</Link>
+              <Link to="/bildrechte"  className="text-sm text-muted-foreground hover:text-foreground transition-colors">Bildrechte</Link>
             </div>
-          </div>
-
-          {/* Column 4: Newsletter */}
-          <div>
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-foreground mb-5">Newsletter</p>
-            <p className="text-sm text-muted-foreground mb-4">Stay informed about new works and exhibitions.</p>
-            {/* TODO: replace with actual newsletter integration (Mailchimp, ConvertKit, etc.) */}
-            <form onSubmit={(e) => e.preventDefault()} className="flex">
-              <input
-                type="email"
-                placeholder="your@email.com"
-                className="flex-1 bg-background border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none transition-colors"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-primary text-primary-foreground font-mono text-xs uppercase tracking-wider hover:bg-gold-hover transition-colors"
-              >
-                Subscribe
-              </button>
-            </form>
           </div>
         </div>
 
         <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-muted-foreground text-xs font-mono">
-            © 2025 Miroslav Wiedermann · All rights reserved
+            © {new Date().getFullYear()} Miroslav Wiedermann
           </p>
-          <p className="text-muted-foreground/50 text-xs font-mono">
-            {/* PLACEHOLDER: Replace with actual studio name */}
-            Site by [Your Studio]
-          </p>
+          <div className="flex gap-4 text-muted-foreground/50 text-xs font-mono">
+            <Link to="/impressum"   className="hover:text-muted-foreground transition-colors">Impressum</Link>
+            <Link to="/datenschutz" className="hover:text-muted-foreground transition-colors">Datenschutz</Link>
+            <Link to="/bildrechte"  className="hover:text-muted-foreground transition-colors">Bildrechte</Link>
+          </div>
         </div>
       </div>
     </footer>

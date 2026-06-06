@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1450 450">
+  <!-- Background -->
+  <rect width="1450" height="450" fill="#1c1a17"/>
+
+  <!-- Top label -->
+  <text x="725" y="52" font-family="monospace" font-size="16" fill="#5a4e3f" text-anchor="middle" letter-spacing="10">MORSE TEXT · FILZ · ACRYL · 145 × 45 CM · 1999</text>
+
+  <!-- Decorative top line -->
+  <line x1="80" y1="70" x2="1370" y2="70" stroke="#2e2820" stroke-width="1"/>
+
+  <!-- ROW 1: M O R S E -->
+  <!-- M = -- -->
+  <rect x="273" y="184" width="70" height="12" fill="#c4a882" rx="3"/>
+  <rect x="363" y="184" width="70" height="12" fill="#c4a882" rx="3"/>
+  <!-- O = --- -->
+  <rect x="483" y="184" width="70" height="12" fill="#c4a882" rx="3"/>
+  <rect x="573" y="184" width="70" height="12" fill="#c4a882" rx="3"/>
+  <rect x="663" y="184" width="70" height="12" fill="#c4a882" rx="3"/>
+  <!-- R = .-. -->
+  <circle cx="795" cy="190" r="12" fill="#c4a882"/>
+  <rect x="827" y="184" width="70" height="12" fill="#c4a882" rx="3"/>
+  <circle cx="929" cy="190" r="12" fill="#c4a882"/>
+  <!-- S = ... -->
+  <circle cx="1003" cy="190" r="12" fill="#c4a882"/>
+  <circle cx="1047" cy="190" r="12" fill="#c4a882"/>
+  <circle cx="1091" cy="190" r="12" fill="#c4a882"/>
+  <!-- E = . -->
+  <circle cx="1165" cy="190" r="12" fill="#c4a882"/>
+
+  <!-- Character labels row 1 -->
+  <text x="308" y="220" font-family="monospace" font-size="10" fill="#3a3025" text-anchor="middle">M</text>
+  <text x="573" y="220" font-family="monospace" font-size="10" fill="#3a3025" text-anchor="middle">O</text>
+  <text x="862" y="220" font-family="monospace" font-size="10" fill="#3a3025" text-anchor="middle">R</text>
+  <text x="1047" y="220" font-family="monospace" font-size="10" fill="#3a3025" text-anchor="middle">S</text>
+  <text x="1165" y="220" font-family="monospace" font-size="10" fill="#3a3025" text-anchor="middle">E</text>
+
+  <!-- Center separator -->
+  <line x1="80" y1="245" x2="1370" y2="245" stroke="#2e2820" stroke-width="1" stroke-dasharray="4 8"/>
+
+  <!-- ROW 2: T E X T -->
+  <!-- T = - -->
+  <rect x="454" y="294" width="70" height="12" fill="#c4a882" rx="3"/>
+  <!-- E = . -->
+  <circle cx="586" cy="300" r="12" fill="#c4a882"/>
+  <!-- X = -..- -->
+  <rect x="648" y="294" width="70" height="12" fill="#c4a882" rx="3"/>
+  <circle cx="750" cy="300" r="12" fill="#c4a882"/>
+  <circle cx="794" cy="300" r="12" fill="#c4a882"/>
+  <rect x="826" y="294" width="70" height="12" fill="#c4a882" rx="3"/>
+  <!-- T = - -->
+  <rect x="946" y="294" width="70" height="12" fill="#c4a882" rx="3"/>
+
+  <!-- Character labels row 2 -->
+  <text x="489" y="324" font-family="monospace" font-size="10" fill="#3a3025" text-anchor="middle">T</text>
+  <text x="586" y="324" font-family="monospace" font-size="10" fill="#3a3025" text-anchor="middle">E</text>
+  <text x="748" y="324" font-family="monospace" font-size="10" fill="#3a3025" text-anchor="middle">X</text>
+  <text x="981" y="324" font-family="monospace" font-size="10" fill="#3a3025" text-anchor="middle">T</text>
+
+  <!-- Decorative bottom line -->
+  <line x1="80" y1="348" x2="1370" y2="348" stroke="#2e2820" stroke-width="1"/>
+
+  <!-- Bottom note -->
+  <text x="725" y="395" font-family="monospace" font-size="13" fill="#4a3f2f" text-anchor="middle" letter-spacing="6">· · — ·· — · ·· ·— — — ·</text>
+  <text x="725" y="425" font-family="monospace" font-size="11" fill="#3a3025" text-anchor="middle" letter-spacing="3">Relief — für alle lesbar, die die Sprache kennen</text>
+</svg>

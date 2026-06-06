@@ -1,0 +1,14 @@
+Options -MultiViews
+RewriteEngine On
+RewriteBase /
+
+# Bestehende Dateien direkt ausliefern
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# API nicht umleiten
+RewriteRule ^api/ - [L]
+
+# Alle anderen Anfragen → SPA (index.html)
+RewriteRule . /index.html [L]

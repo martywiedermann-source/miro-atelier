@@ -4,16 +4,12 @@ interface InquiryTypeSelectorProps {
 }
 
 const inquiryTypes = [
-  "Artwork Purchase",
-  "Exhibition Proposal",
-  "Speaking Booking",
-  "Press & Media",
-  "Other",
+  "Werkankauf",
+  "Ausstellungsanfrage",
+  "Pressenanfrage",
+  "Sonstiges",
 ];
 
-/**
- * Button-group selector for inquiry types on the contact form
- */
 const InquiryTypeSelector = ({ value, onChange }: InquiryTypeSelectorProps) => {
   return (
     <div className="flex flex-wrap gap-2">

@@ -3,17 +3,19 @@ import Hero from "@/components/Hero";
 import PageTransition from "@/components/PageTransition";
 import SectionLabel from "@/components/SectionLabel";
 import { Link } from "react-router-dom";
-import { events } from "@/lib/events";
+import { useEffectiveEvents } from "@/lib/hooks";
+import { siteConfig } from "@/lib/siteConfig";
+import { usePageTitle } from "@/lib/seo";
 
 const featuredWorks = [
-  { image: "/images/gallery/artwork-1.jpg", title: "Nocturne in Gold", year: "2024" },
-  { image: "/images/gallery/artwork-3.jpg", title: "Aurum Fragment", year: "2023" },
-  { image: "/images/gallery/artwork-8.jpg", title: "Kintsugi Meridian", year: "2024" },
+  { image: "/images/gallery/gelber-schatten/_mg_3137.jpg", title: "Gelber Schatten", year: "2007" },
+  { image: "/images/gallery/mahlwerk/bild0394.jpg", title: "Mahlwerk", year: "2009" },
+  { image: "/images/gallery/strudel/dsc00118.jpg", title: "Strudel", year: "2011" },
 ];
 
-const upcomingEvents = events.filter((e) => e.upcoming).slice(0, 2);
-
 const Home = () => {
+  usePageTitle();
+  const upcomingEvents = useEffectiveEvents().filter((e) => e.upcoming).slice(0, 2);
   return (
     <PageTransition>
       {/* Section 1 — Hero Slider */}
@@ -29,11 +31,10 @@ const Home = () => {
           className="container mx-auto text-center max-w-4xl"
         >
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-8">
-            Philosophy
+            Philosophie
           </p>
           <h2 className="font-display text-4xl md:text-6xl lg:text-7xl font-light text-foreground tracking-tight italic leading-tight">
-            {/* PLACEHOLDER: Replace with actual philosophy statement */}
-            Form. Tension. Silence. — The philosophy that drives every work.
+            »Allein der Gedanke, mich einordnen zu wollen, ist mir unendlich fremd.«
           </h2>
           <div className="gold-line mt-12" />
         </motion.div>
@@ -43,12 +44,12 @@ const Home = () => {
       <section className="py-24 md:py-40 px-6">
         <div className="container mx-auto">
           <div className="flex items-center justify-between mb-16">
-            <SectionLabel number="01" label="Selected Works" />
+            <SectionLabel number="01" label="Ausgewählte Werke" />
             <Link
               to="/works"
               className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors"
             >
-              View All →
+              Alle Werke →
             </Link>
           </div>
 
@@ -117,7 +118,7 @@ const Home = () => {
               to="/works"
               className="inline-block font-mono text-xs uppercase tracking-[0.3em] text-foreground border border-foreground/30 px-10 py-4 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-500"
             >
-              View All Works
+              Alle Arbeiten
             </Link>
           </motion.div>
         </div>
@@ -147,76 +148,84 @@ const Home = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
             >
-              <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-4">About</p>
+              <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-4">Der Künstler</p>
               <h3 className="font-display text-3xl md:text-4xl font-light text-foreground mb-6">
-                {/* PLACEHOLDER: Replace with actual bio intro */}
-                Between form and feeling, every work begins.
+                Zwischen Relief und Skulptur — Filz als Medium.
               </h3>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                {/* PLACEHOLDER: Replace with actual bio */}
-                Miroslav Wiedermann is a visual artist working across painting, drawing, and mixed media. His work explores the liminal space between abstraction and figuration, searching for moments where form dissolves into feeling.
+                Miroslav Wiedermann, geboren 1964 in Eger, arbeitet seit 1994 freischaffend als Künstler. Seine Reliefs entstehen durch präzises Schneiden und Schichten von Filz — ein Material, das er für seine Doppelnatur schätzt: weich und dennoch strukturstabil.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-8">
-                Based between Berlin and Vienna, his practice is rooted in materiality — the weight of pigment, the resistance of canvas, the alchemy of gold leaf.
+                Die Arbeiten stehen zwischen Malerei und Skulptur. Sie verändern sich mit dem Licht und der Perspektive des Betrachters. Atelier in Gelnhausen Hailer.
               </p>
               <Link
                 to="/about"
                 className="inline-block font-mono text-xs uppercase tracking-[0.3em] text-foreground border border-foreground/30 px-8 py-3 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-500"
               >
-                Read My Story
+                Zur Vita
               </Link>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Section 5 — Upcoming Events Teaser */}
-      <section className="py-24 md:py-40 px-6">
-        <div className="container mx-auto">
-          <SectionLabel number="02" label="Upcoming" />
+      {/* Section 5 — Upcoming Events Teaser (nur wenn Seite aktiv + Events vorhanden) */}
+      {siteConfig.pages.events.enabled && upcomingEvents.length > 0 && (
+        <section className="py-24 md:py-40 px-6">
+          <div className="container mx-auto">
+            <SectionLabel number="02" label="Bevorstehend" />
 
-          <div className="space-y-8 mb-12">
-            {upcomingEvents.map((event, i) => (
-              <motion.div
-                key={event.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: i * 0.1 }}
-                className="flex flex-col md:flex-row gap-6 md:gap-10 py-8 border-b border-border"
-              >
-                <div className="flex items-center gap-4 md:w-40 shrink-0">
-                  <span className="font-display text-3xl text-primary">
-                    {new Date(event.date).getDate()}
-                  </span>
-                  <div>
-                    <span className="font-mono text-xs text-primary tracking-wider block">
-                      {new Date(event.date).toLocaleString("en", { month: "short" }).toUpperCase()}
-                    </span>
-                    <span className="font-mono text-xs text-muted-foreground">{new Date(event.date).getFullYear()}</span>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-display text-xl text-foreground mb-2">{event.title}</h4>
-                  <p className="font-mono text-xs text-muted-foreground mb-2">
-                    {event.venue} — {event.city}, {event.country}
-                  </p>
-                  <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2">
-                    {event.description}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
+            <div className="space-y-8 mb-12">
+              {upcomingEvents.map((event, i) => {
+                const isPlaceholder = event.date.startsWith("XXXX");
+                const date = isPlaceholder ? null : new Date(event.date);
+                return (
+                  <motion.div
+                    key={event.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: i * 0.1 }}
+                    className="flex flex-col md:flex-row gap-6 md:gap-10 py-8 border-b border-border"
+                  >
+                    <div className="flex items-center gap-4 md:w-40 shrink-0">
+                      <span className="font-display text-3xl text-primary">
+                        {date ? date.getDate() : "—"}
+                      </span>
+                      <div>
+                        <span className="font-mono text-xs text-primary tracking-wider block">
+                          {date ? date.toLocaleString("de", { month: "short" }).toUpperCase() : "—"}
+                        </span>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {date ? date.getFullYear() : "—"}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-display text-xl text-foreground mb-2">{event.title}</h4>
+                      <p className="font-mono text-xs text-muted-foreground mb-2">
+                        {event.venue} — {event.city}, {event.country}
+                      </p>
+                      {event.description && (
+                        <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2">
+                          {event.description}
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            <Link
+              to="/events"
+              className="inline-block font-mono text-xs uppercase tracking-[0.3em] text-foreground border border-foreground/30 px-8 py-3 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-500"
+            >
+              Alle Ausstellungen
+            </Link>
           </div>
-
-          <Link
-            to="/events"
-            className="inline-block font-mono text-xs uppercase tracking-[0.3em] text-foreground border border-foreground/30 px-8 py-3 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-500"
-          >
-            All Exhibitions
-          </Link>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Section 6 — Contact CTA Banner (dark contrast section) */}
       <section className="py-24 md:py-32 px-6 bg-dark-contrast">
@@ -227,22 +236,27 @@ const Home = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
           >
+            {/* Logo auf dunklem Hintergrund */}
+            <img
+              src="/logo/logo-dark.jpg"
+              alt="Atelier Miroslav Wiedermann"
+              className="w-32 mx-auto mb-10 opacity-90"
+            />
             <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-light text-dark-contrast-foreground mb-10">
-              {/* PLACEHOLDER */}
-              Let's create something together.
+              Interesse an einer Arbeit?
             </h2>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 to="/contact?inquiry=artwork"
                 className="font-mono text-xs uppercase tracking-[0.3em] text-dark-contrast-foreground border border-dark-contrast-foreground/30 px-8 py-4 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-500"
               >
-                Inquire About a Work
+                Anfrage stellen
               </Link>
               <Link
-                to="/contact?inquiry=speaking"
+                to="/works"
                 className="font-mono text-xs uppercase tracking-[0.3em] text-primary border border-primary/30 px-8 py-4 hover:bg-primary hover:text-primary-foreground transition-all duration-500"
               >
-                Book as Speaker
+                Alle Arbeiten
               </Link>
             </div>
           </motion.div>

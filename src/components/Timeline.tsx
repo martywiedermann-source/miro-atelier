@@ -6,14 +6,17 @@ interface TimelineItem {
   description: string;
 }
 
-// PLACEHOLDER: Replace with actual milestones
 const milestones: TimelineItem[] = [
-  { year: "2024", title: "Museum für Moderne Kunst — Solo Exhibition", description: "Major solo show 'Nocturnes' featuring 12 large-scale paintings." },
-  { year: "2023", title: "Art Basel — Gallery Representation", description: "Represented by Galerie Koenig at Art Basel, international recognition." },
-  { year: "2022", title: "World Economic Forum — Keynote", description: "Invited speaker on creativity and innovation at Davos side event." },
-  { year: "2021", title: "Centre Pompidou — Group Exhibition", description: "Featured in 'New European Painting' survey exhibition." },
-  { year: "2020", title: "Residency — Villa Romana, Florence", description: "Six-month artist residency exploring Italian materiality and light." },
-  { year: "2018", title: "First Major Solo Exhibition", description: "Breakthrough solo show at Kunsthalle Wien, critical acclaim." },
+  { year: "1964", title: "Geboren in Eger", description: "Miroslav Wiedermann wird in Eger (Cheb) geboren." },
+  { year: "1994", title: "Selbständige Arbeit in Kunst und Architektur", description: "Beginn der freischaffenden Tätigkeit als Künstler und Architekt. Konzeptionelle Messebauten für Cebit, Anuga und Musikmesse Frankfurt." },
+  { year: "1996", title: "15. Internationale Biennale Kortrijk", description: "Teilnahme an der 15. Internationalen Biennale in Kortrijk, Belgien." },
+  { year: "1997", title: "Max Planck Institut Jena", description: "Konzeptionelle Arbeit für das Max Planck Institut in Jena." },
+  { year: "1999", title: "Einzelausstellung Herrnhaag — hr3-Bericht", description: "Einzelausstellung in Herrnhaag (Lichtenburg). TV-Bericht im hr3." },
+  { year: "2000", title: "Publikation »kunstWerk«", description: "Aufnahme in die Publikation »kunstWerk – Aktuelle Positionen der Bildenden Kunst«. Gruppenausstellungen im KunsWerk Holzhausenschlösschen und der BBK Galerie Frankfurt." },
+  { year: "2002", title: "Einzelausstellung Galerie Frech Alzenau", description: "Einzelausstellung mit TV-Bericht. Großprojekt in Wiesbaden." },
+  { year: "2007", title: "Atelier Gelnhausen — Künstlerbund Simplicius", description: "Gastmitglied beim Künstlerbund Simplicius in Hanau. Einrichtung des Ateliers in Gelnhausen Hailer." },
+  { year: "2009", title: "Einzelausstellung artRIUM Bruchköbel", description: "Einzelausstellung im artRIUM Bruchköbel." },
+  { year: "2010", title: "Galerie Bronto u. Wiesel, Wiesbaden", description: "Ausstellung in der Galerie Bronto u. Wiesel in Wiesbaden." },
 ];
 
 /**

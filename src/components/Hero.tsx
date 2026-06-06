@@ -1,16 +1,18 @@
 import { motion } from "framer-motion";
 import Slider from "./Slider";
+import { useConfig } from "@/contexts/ConfigContext";
 
-// REPLACE: swap slide images with actual artwork photography
-const heroSlides = [
-  { image: "/images/slider/slide-1.jpg", title: "Nocturne in Gold", year: "2024" },
-  { image: "/images/slider/slide-2.jpg", title: "Crimson Dissolution", year: "2023" },
-  { image: "/images/slider/slide-3.jpg", title: "Aurum Fragment", year: "2023" },
-  { image: "/images/slider/slide-4.jpg", title: "Terra Fluens", year: "2023" },
-  { image: "/images/slider/slide-5.jpg", title: "Lux Aeterna", year: "2024" },
+const STATIC_HERO_SLIDES = [
+  { image: "/images/gallery/gelber-schatten/_mg_3137.jpg", title: "Gelber Schatten", year: "2007" },
+  { image: "/images/gallery/strudel/dsc00118.jpg", title: "Strudel", year: "2011" },
+  { image: "/images/gallery/mahlwerk/bild0394.jpg", title: "Mahlwerk", year: "2009" },
+  { image: "/images/gallery/entscheidung/dsc00534.jpg", title: "Entscheidung", year: "2012" },
+  { image: "/images/gallery/ahnentafel/_mg_3558.jpg", title: "Ahnentafel", year: "2007" },
 ];
 
 const Hero = () => {
+  const { effectiveOverride } = useConfig();
+  const heroSlides = (effectiveOverride.heroSlides?.length ? effectiveOverride.heroSlides : STATIC_HERO_SLIDES);
   const scrollToContent = () => {
     window.scrollTo({ top: window.innerHeight, behavior: "smooth" });
   };
@@ -32,8 +34,7 @@ const Hero = () => {
             transition={{ delay: 0.3, duration: 0.8 }}
             className="font-mono text-xs uppercase tracking-[0.4em] text-primary mb-6"
           >
-            {/* PLACEHOLDER: Replace with actual tagline */}
-            Artist · Speaker · Visionary
+            Künstler · Relief · Filz
           </motion.p>
 
           <motion.h1
@@ -55,7 +56,7 @@ const Hero = () => {
               onClick={scrollToContent}
               className="inline-block font-mono text-xs uppercase tracking-[0.3em] text-foreground border border-foreground/30 px-10 py-4 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-500"
             >
-              Discover the Work
+              Zu den Arbeiten
             </button>
           </motion.div>
         </div>

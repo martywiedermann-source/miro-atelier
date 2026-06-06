@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.gstack/
+
+# Deploy-Script mit Credentials — nie committen
+deploy.sh
