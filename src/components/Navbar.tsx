@@ -72,16 +72,16 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex flex-col leading-none select-none group">
             <span
-              className="text-[32px] leading-none transition-opacity duration-300 group-hover:opacity-70"
-              style={{ fontFamily: '"Bodoni Moda", Didot, "Bodoni 72", Georgia, serif', color: "#1a1a1a", letterSpacing: "-0.01em", fontWeight: 400 }}
+              className="leading-none transition-opacity duration-300 group-hover:opacity-70"
+              style={{ fontFamily: '"Bodoni Moda", Didot, "Bodoni 72", Georgia, serif', color: "#1a1a1a", letterSpacing: "0.15em", fontWeight: 400, fontSize: "clamp(18px, 2vw, 24px)", textTransform: "uppercase" }}
             >
-              MW
+              Atelier
             </span>
             <span
-              className="text-[7.5px] uppercase mt-0.5 transition-opacity duration-300 group-hover:opacity-70"
-              style={{ fontFamily: '"Bodoni Moda", Didot, "Bodoni 72", Georgia, serif', color: "#1a1a1a", letterSpacing: "0.38em", fontWeight: 400 }}
+              className="leading-tight transition-opacity duration-300 group-hover:opacity-70"
+              style={{ fontFamily: '"Bodoni Moda", Didot, "Bodoni 72", Georgia, serif', color: "#1a1a1a", letterSpacing: "0.10em", fontWeight: 400, fontSize: "clamp(14px, 1.6vw, 19px)", textTransform: "uppercase" }}
             >
-              Wiedermann
+              Miroslav
             </span>
           </Link>
 

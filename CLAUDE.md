@@ -46,6 +46,9 @@
 - Timeline: "15th International Biennial" → "15. Internationalen Biennale"
 - dist gebaut (npm run build ✓)
 - deploy.sh erstellt (curl-basiert, FTP-Zugangsdaten noch eintragen)
+- Google Fonts lokal gehostet (Bodoni Moda, Abel, Cormorant Garamond, Outfit, Space Mono via @fontsource) – kein externer Request mehr
+- Impressum-Adresse korrigiert (Brühlstraße 3, 63571 Gelnhausen) + Telefon korrigiert
+- DSGVO-Hinweis mit Datenschutz-Link im Kontaktformular ergänzt
 
 ## Bekannte Werke und ihre Ordner
 relief: gelber-schatten, falscher-schatten, ahnentafel, mahlwerk,
