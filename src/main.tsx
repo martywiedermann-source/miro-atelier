@@ -10,5 +10,8 @@ import "@fontsource/outfit/300.css";
 import "@fontsource/outfit/400.css";
 import "@fontsource/outfit/500.css";
 import "@fontsource/space-mono/400.css";
+import "@fontsource/bodoni-moda/400.css";
+import "@fontsource/bodoni-moda/400-italic.css";
+import "@fontsource/abel/400.css";
 
 createRoot(document.getElementById("root")!).render(<App />);

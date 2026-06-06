@@ -15,6 +15,7 @@ export default {
     extend: {
       fontFamily: {
         display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        bodoni: ['"Bodoni Moda"', 'Didot', '"Bodoni 72"', 'Georgia', 'serif'],
         body: ['"Outfit"', 'system-ui', 'sans-serif'],
         mono: ['"Space Mono"', 'monospace'],
         abel: ['"Abel"', 'sans-serif'],

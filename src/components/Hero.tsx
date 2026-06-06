@@ -34,14 +34,14 @@ const Hero = () => {
             transition={{ delay: 0.3, duration: 0.8 }}
             className="font-mono text-xs uppercase tracking-[0.4em] text-primary mb-6"
           >
-            Künstler · Relief · Filz
+            {effectiveOverride.hero?.tagline ?? "Künstler · Relief · Filz"}
           </motion.p>
 
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
-            className="font-display text-[10vw] md:text-[7vw] lg:text-[5vw] font-light leading-[0.95] tracking-tight text-foreground mb-8"
+            className="font-bodoni text-[10vw] md:text-[7vw] lg:text-[5vw] font-normal leading-[0.95] tracking-tight text-foreground mb-8"
           >
             Miroslav Wiedermann
           </motion.h1>
@@ -56,7 +56,7 @@ const Hero = () => {
               onClick={scrollToContent}
               className="inline-block font-mono text-xs uppercase tracking-[0.3em] text-foreground border border-foreground/30 px-10 py-4 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-500"
             >
-              Zu den Arbeiten
+              {effectiveOverride.hero?.ctaText ?? "Zu den Arbeiten"}
             </button>
           </motion.div>
         </div>

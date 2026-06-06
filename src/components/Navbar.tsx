@@ -70,16 +70,16 @@ const Navbar = () => {
           style={{ height: "76px" }}
         >
           {/* Logo */}
-          <Link to="/" className="flex flex-col leading-none select-none">
+          <Link to="/" className="flex flex-col leading-none select-none group">
             <span
-              className="text-[30px] leading-none"
-              style={{ fontFamily: "Georgia, serif", color: "#1a1a1a", letterSpacing: "-0.02em" }}
+              className="text-[32px] leading-none transition-opacity duration-300 group-hover:opacity-70"
+              style={{ fontFamily: '"Bodoni Moda", Didot, "Bodoni 72", Georgia, serif', color: "#1a1a1a", letterSpacing: "-0.01em", fontWeight: 400 }}
             >
               MW
             </span>
             <span
-              className="text-[8px] uppercase mt-0.5"
-              style={{ fontFamily: "Georgia, serif", color: "#1a1a1a", letterSpacing: "0.32em" }}
+              className="text-[7.5px] uppercase mt-0.5 transition-opacity duration-300 group-hover:opacity-70"
+              style={{ fontFamily: '"Bodoni Moda", Didot, "Bodoni 72", Georgia, serif', color: "#1a1a1a", letterSpacing: "0.38em", fontWeight: 400 }}
             >
               Wiedermann
             </span>

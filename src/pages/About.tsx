@@ -158,6 +158,12 @@ const About = () => {
             >
               Kontakt
             </Link>
+            <Link
+              to="/press"
+              className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground border border-border/40 px-10 py-4 hover:border-foreground hover:text-foreground transition-all duration-500"
+            >
+              Pressemappe
+            </Link>
           </motion.div>
 
           {/* Partner logos */}

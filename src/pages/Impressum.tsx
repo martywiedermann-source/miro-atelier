@@ -4,9 +4,9 @@ import { useConfig } from "@/contexts/ConfigContext";
 
 const DEFAULTS = {
   name:     "Miroslav Wiedermann",
-  strasse:  "Berkaer Str. 19",
-  ort:      "99837 Werra-Suhl-Tal",
-  telefon:  "+49 175 5933703",
+  strasse:  "Brühlstraße 3",
+  ort:      "63571 Gelnhausen",
+  telefon:  "06051 977030",
   email:    "miro@ateliermiro.de",
   beruf:    "Bildender Künstler (freischaffend seit 1994).",
   steuer:   "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).",

@@ -6,6 +6,7 @@ export interface ArtworkOverride {
   visible?: boolean;
   hiddenImages?: string[];
   imageOrder?: string[];
+  status?: "available" | "sold" | "on-loan" | "not-for-sale";
 }
 
 export interface SiteOverride {
@@ -14,6 +15,7 @@ export interface SiteOverride {
   pages?: Partial<Record<keyof typeof siteConfig.pages, { enabled?: boolean }>>;
   events?: ArtEvent[];
   heroSlides?: Array<{ image: string; title: string; year: string }>;
+  hero?: { tagline?: string; ctaText?: string };
   impressum?: Record<string, string>;
   design?: {
     colors?: { primary?: string; background?: string; foreground?: string };

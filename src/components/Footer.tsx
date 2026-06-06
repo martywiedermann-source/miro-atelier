@@ -34,6 +34,7 @@ const Footer = () => {
               {siteConfig.pages.events.enabled && <Link to="/events" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Ausstellungen</Link>}
               {siteConfig.pages.contact.enabled && <Link to="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Kontakt</Link>}
               <Link to="/impressum" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Impressum</Link>
+              <Link to="/press" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pressemappe</Link>
             </div>
           </div>
 

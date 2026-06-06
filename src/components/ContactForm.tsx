@@ -173,6 +173,14 @@ const ContactForm = () => {
         {loading && <Loader2 size={14} className="animate-spin" />}
         Nachricht senden
       </button>
+
+      <p className="font-mono text-[10px] text-muted-foreground/60 leading-relaxed">
+        Mit dem Absenden werden Ihre Angaben zur Bearbeitung Ihrer Anfrage verwendet.
+        Es findet keine Weitergabe an Dritte statt.{" "}
+        <a href="/datenschutz" className="underline underline-offset-2 hover:text-muted-foreground transition-colors">
+          Datenschutzerklärung
+        </a>
+      </p>
     </form>
   );
 };

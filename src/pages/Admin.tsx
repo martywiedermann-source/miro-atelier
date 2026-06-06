@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { artworks } from "@/lib/artworks";
 import { events as staticEvents, type ArtEvent } from "@/lib/events";
 import { siteConfig } from "@/lib/siteConfig";
-import { useConfig, type SiteOverride } from "@/contexts/ConfigContext";
+import { useConfig, type SiteOverride, type ArtworkOverride } from "@/contexts/ConfigContext";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,15 +11,25 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
-// ── API helper ────────────────────────────────────────────────────────────────
+// ── Auth error ────────────────────────────────────────────────────────────────
 
-async function api(action: string, body?: Record<string, string>): Promise<{ ok: boolean; [k: string]: unknown }> {
-  const res = await fetch(`/api/admin.php?action=${action}`, {
+class AuthError extends Error { constructor() { super("auth"); } }
+
+// ── API helpers ───────────────────────────────────────────────────────────────
+
+async function api(
+  action: string,
+  body?: Record<string, string>,
+  params?: Record<string, string>
+): Promise<{ ok: boolean; [k: string]: unknown }> {
+  const qs = params ? "&" + new URLSearchParams(params).toString() : "";
+  const res = await fetch(`/api/admin.php?action=${action}${qs}`, {
     method: body ? "POST" : "GET",
     credentials: "include",
     headers: body ? { "Content-Type": "application/x-www-form-urlencoded" } : undefined,
     body: body ? new URLSearchParams(body) : undefined,
   });
+  if (res.status === 401) throw new AuthError();
   return res.json();
 }
 
@@ -30,6 +40,7 @@ async function apiJson(action: string, data: unknown): Promise<{ ok: boolean; [k
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
+  if (res.status === 401) throw new AuthError();
   return res.json();
 }
 
@@ -39,7 +50,18 @@ async function apiUpload(action: string, form: FormData): Promise<{ ok: boolean;
     credentials: "include",
     body: form,
   });
+  if (res.status === 401) throw new AuthError();
   return res.json();
+}
+
+// ── Client-side file validation ───────────────────────────────────────────────
+
+function validateImageFile(file: File): string | null {
+  const allowed = ["image/jpeg", "image/png", "image/webp"];
+  const maxBytes = 10 * 1024 * 1024;
+  if (!allowed.includes(file.type)) return "Nur JPG, PNG oder WEBP erlaubt";
+  if (file.size > maxBytes) return `Datei zu groß (max 10 MB, diese Datei: ${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+  return null;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -155,7 +177,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 const Admin = () => {
-  const { draftOverride, setDraftOverride, effectiveOverride, saveToServer } = useConfig();
+  const { override, draftOverride, setDraftOverride, effectiveOverride, saveToServer } = useConfig();
 
   // Auth state
   const [authState, setAuthState] = useState<"loading" | "loggedOut" | "loggedIn">("loading");
@@ -166,12 +188,35 @@ const Admin = () => {
   const [expandedArtwork, setExpandedArtwork] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
   const uploadRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const replaceRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [replacingImage, setReplacingImage] = useState<{ artworkId: string; src: string } | null>(null);
+  const [syncingArtwork, setSyncingArtwork] = useState<string | null>(null);
 
   // Event state
   const effectiveEvents: ArtEvent[] = effectiveOverride.events ?? staticEvents;
   const [editingEvent, setEditingEvent] = useState<ArtEvent | null>(null);
   const [isNewEvent, setIsNewEvent] = useState(false);
   const [eventErrors, setEventErrors] = useState<Partial<Record<keyof ArtEvent, string>>>({});
+
+  // Unsaved changes detection
+  const hasUnsavedChanges = JSON.stringify(draftOverride) !== JSON.stringify(override ?? { version: 1 });
+
+  // Session expiry handler
+  const handleApiError = useCallback((e: unknown) => {
+    if (e instanceof AuthError) {
+      setAuthState("loggedOut");
+      toast.error("Session abgelaufen – bitte neu anmelden");
+    } else {
+      toast.error("Verbindungsfehler");
+    }
+  }, []);
+
+  // Auto-save: persist config immediately after destructive operations
+  const autoSave = useCallback(async (next: SiteOverride) => {
+    setDraftOverride(next);
+    const saved = await saveToServer(next);
+    if (!saved) toast.error("Gespeichert lokal, aber Server-Fehler – bitte manuell speichern");
+  }, [saveToServer, setDraftOverride]);
 
   // Check auth on mount
   useEffect(() => {
@@ -252,6 +297,8 @@ const Admin = () => {
 
   const handleImageUpload = useCallback(async (artworkId: string, file: File) => {
     if (!file) return;
+    const validErr = validateImageFile(file);
+    if (validErr) { toast.error(validErr); return; }
     setUploading(artworkId);
     const form = new FormData();
     form.append("artwork_id", artworkId);
@@ -263,7 +310,7 @@ const Admin = () => {
         const artwork = artworks.find((a) => a.id === artworkId);
         const base = artwork?.images ?? [];
         const currentOrder = getImageOrder(artworkId, base);
-        setDraftOverride({
+        await autoSave({
           ...draftOverride,
           artworks: {
             ...draftOverride.artworks,
@@ -273,37 +320,82 @@ const Admin = () => {
             },
           },
         });
-        toast.success("Bild hochgeladen");
+        toast.success("Bild hochgeladen und gespeichert");
       } else {
         toast.error((res.error as string) ?? "Upload fehlgeschlagen");
       }
-    } catch {
-      toast.error("Verbindungsfehler");
+    } catch (e) {
+      handleApiError(e);
     } finally {
       setUploading(null);
     }
-  }, [draftOverride, setDraftOverride]);
+  }, [draftOverride, autoSave, handleApiError]);
 
   const handleImageDelete = useCallback(async (artworkId: string, src: string) => {
     const filename = src.split("/").pop() ?? "";
-    if (!filename || !window.confirm(`Bild "${filename}" in Archiv verschieben?`)) return;
-    const res = await api("delete_image", { artwork_id: artworkId, filename });
-    if (res.ok) {
-      const artwork = artworks.find((a) => a.id === artworkId);
-      const base = (artwork?.images ?? []).filter((p) => p !== src);
-      const currentOrder = getImageOrder(artworkId, artwork?.images ?? []).filter((p) => p !== src);
-      setDraftOverride({
-        ...draftOverride,
-        artworks: {
-          ...draftOverride.artworks,
-          [artworkId]: { ...draftOverride.artworks?.[artworkId], imageOrder: currentOrder, hiddenImages: (draftOverride.artworks?.[artworkId]?.hiddenImages ?? []).filter((h) => h !== src) },
-        },
-      });
-      toast.success("Archiviert");
-    } else {
-      toast.error((res.error as string) ?? "Fehler");
+    if (!filename || !window.confirm(`Bild "${filename}" ins Archiv verschieben?`)) return;
+    try {
+      const res = await api("delete_image", { artwork_id: artworkId, filename });
+      if (res.ok) {
+        const artwork = artworks.find((a) => a.id === artworkId);
+        const currentOrder = getImageOrder(artworkId, artwork?.images ?? []).filter((p) => p !== src);
+        await autoSave({
+          ...draftOverride,
+          artworks: {
+            ...draftOverride.artworks,
+            [artworkId]: {
+              ...draftOverride.artworks?.[artworkId],
+              imageOrder: currentOrder,
+              hiddenImages: (draftOverride.artworks?.[artworkId]?.hiddenImages ?? []).filter((h) => h !== src),
+            },
+          },
+        });
+        toast.success("Archiviert");
+      } else {
+        toast.error((res.error as string) ?? "Fehler");
+      }
+    } catch (e) {
+      handleApiError(e);
     }
-  }, [draftOverride, setDraftOverride]);
+  }, [draftOverride, autoSave, handleApiError]);
+
+  const handleImageReplace = useCallback(async (artworkId: string, oldSrc: string, file: File) => {
+    const validErr = validateImageFile(file);
+    if (validErr) { toast.error(validErr); return; }
+    setUploading(artworkId);
+    const form = new FormData();
+    form.append("artwork_id", artworkId);
+    form.append("image", file);
+    try {
+      const uploadRes = await apiUpload("upload_image", form);
+      if (uploadRes.ok && uploadRes.path) {
+        const newPath = uploadRes.path as string;
+        const filename = oldSrc.split("/").pop() ?? "";
+        if (filename) await api("delete_image", { artwork_id: artworkId, filename });
+        const artwork = artworks.find((a) => a.id === artworkId);
+        const currentOrder = getImageOrder(artworkId, artwork?.images ?? []);
+        const newOrder = currentOrder.map((p) => p === oldSrc ? newPath : p);
+        await autoSave({
+          ...draftOverride,
+          artworks: {
+            ...draftOverride.artworks,
+            [artworkId]: {
+              ...draftOverride.artworks?.[artworkId],
+              imageOrder: newOrder,
+              hiddenImages: (draftOverride.artworks?.[artworkId]?.hiddenImages ?? []).filter((h) => h !== oldSrc),
+            },
+          },
+        });
+        toast.success("Bild ersetzt und gespeichert");
+      } else {
+        toast.error((uploadRes.error as string) ?? "Upload fehlgeschlagen");
+      }
+    } catch (e) {
+      handleApiError(e);
+    } finally {
+      setUploading(null);
+    }
+  }, [draftOverride, autoSave, handleApiError]);
 
   // ── Events helpers ──────────────────────────────────────────────────────────
 
@@ -343,9 +435,19 @@ const Admin = () => {
 
   const heroSlides = draftOverride.heroSlides ?? STATIC_HERO_SLIDES;
 
-  function removeHeroSlide(i: number) {
+  async function removeHeroSlide(i: number) {
+    const slide = heroSlides[i];
     const next = heroSlides.filter((_, idx) => idx !== i);
-    setDraftOverride({ ...draftOverride, heroSlides: next });
+    try {
+      if (slide.image.startsWith('/images/slider/')) {
+        const filename = slide.image.split('/').pop() ?? '';
+        if (filename) await api("delete_slider", { filename });
+      }
+      await autoSave({ ...draftOverride, heroSlides: next });
+      toast.success("Slide entfernt");
+    } catch (e) {
+      handleApiError(e);
+    }
   }
 
   function moveHeroSlide(from: number, to: number) {
@@ -357,8 +459,12 @@ const Admin = () => {
 
   const sliderUploadRef = useRef<HTMLInputElement>(null);
   const [sliderUploading, setSliderUploading] = useState(false);
+  const sliderReplaceRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const [sliderReplacing, setSliderReplacing] = useState<number | null>(null);
 
   async function handleSliderUpload(file: File) {
+    const validErr = validateImageFile(file);
+    if (validErr) { toast.error(validErr); return; }
     setSliderUploading(true);
     const form = new FormData();
     form.append("image", file);
@@ -366,24 +472,99 @@ const Admin = () => {
       const res = await apiUpload("upload_slider", form);
       if (res.ok && res.path) {
         const path = res.path as string;
-        setDraftOverride({
+        await autoSave({
           ...draftOverride,
           heroSlides: [...heroSlides, { image: path, title: "Neues Bild", year: "" }],
         });
-        toast.success("Bild hinzugefügt");
+        toast.success("Bild hinzugefügt und gespeichert");
       } else {
         toast.error((res.error as string) ?? "Upload fehlgeschlagen");
       }
-    } catch {
-      toast.error("Verbindungsfehler");
+    } catch (e) {
+      handleApiError(e);
     } finally {
       setSliderUploading(false);
+    }
+  }
+
+  async function handleSliderReplace(i: number, file: File) {
+    const validErr = validateImageFile(file);
+    if (validErr) { toast.error(validErr); return; }
+    setSliderReplacing(i);
+    const oldSlide = heroSlides[i];
+    const form = new FormData();
+    form.append("image", file);
+    try {
+      const res = await apiUpload("upload_slider", form);
+      if (res.ok && res.path) {
+        const path = res.path as string;
+        if (oldSlide.image.startsWith('/images/slider/')) {
+          const filename = oldSlide.image.split('/').pop() ?? '';
+          if (filename) await api("delete_slider", { filename });
+        }
+        const next = heroSlides.map((s, idx) => idx === i ? { ...s, image: path } : s);
+        await autoSave({ ...draftOverride, heroSlides: next });
+        toast.success("Bild ersetzt und gespeichert");
+      } else {
+        toast.error((res.error as string) ?? "Upload fehlgeschlagen");
+      }
+    } catch (e) {
+      handleApiError(e);
+    } finally {
+      setSliderReplacing(null);
     }
   }
 
   function updateHeroSlide(i: number, field: "title" | "year", value: string) {
     const next = heroSlides.map((s, idx) => idx === i ? { ...s, [field]: value } : s);
     setDraftOverride({ ...draftOverride, heroSlides: next });
+  }
+
+  // ── Artwork status helpers ──────────────────────────────────────────────────
+
+  function getArtworkStatus(id: string): ArtworkOverride["status"] {
+    const override = draftOverride.artworks?.[id];
+    if (override?.status) return override.status;
+    const art = artworks.find((a) => a.id === id);
+    return (art?.status as ArtworkOverride["status"]) ?? "available";
+  }
+
+  function setArtworkStatus(id: string, status: ArtworkOverride["status"]) {
+    setDraftOverride({
+      ...draftOverride,
+      artworks: { ...draftOverride.artworks, [id]: { ...draftOverride.artworks?.[id], status } },
+    });
+  }
+
+  // ── Server image sync ───────────────────────────────────────────────────────
+
+  async function syncServerImages(artworkId: string, currentOrder: string[]) {
+    setSyncingArtwork(artworkId);
+    try {
+      const res = await api("list_images", undefined, { artwork_id: artworkId });
+      if (!res.ok) { toast.error((res.error as string) ?? "Fehler"); return; }
+      const serverImages = (res.images as string[]) ?? [];
+      const newImages = serverImages.filter((p) => !currentOrder.includes(p));
+      if (newImages.length === 0) {
+        toast.success("Alles synchron – keine neuen Bilder auf Server");
+        return;
+      }
+      await autoSave({
+        ...draftOverride,
+        artworks: {
+          ...draftOverride.artworks,
+          [artworkId]: {
+            ...draftOverride.artworks?.[artworkId],
+            imageOrder: [...currentOrder, ...newImages],
+          },
+        },
+      });
+      toast.success(`${newImages.length} neues Bild${newImages.length > 1 ? "er" : ""} vom Server hinzugefügt`);
+    } catch (e) {
+      handleApiError(e);
+    } finally {
+      setSyncingArtwork(null);
+    }
   }
 
   // ── Impressum helpers ───────────────────────────────────────────────────────
@@ -440,12 +621,24 @@ const Admin = () => {
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-1">ateliermiro.de</p>
             <h1 className="font-display text-4xl font-light">Admin Panel</h1>
+            {hasUnsavedChanges && (
+              <p className="font-mono text-[10px] text-amber-600 mt-1 uppercase tracking-wider">
+                · Ungespeicherte Änderungen
+              </p>
+            )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline" size="sm"
+              onClick={() => window.open("/", "_blank")}
+              className="font-mono text-xs uppercase tracking-[0.15em]"
+            >
+              Vorschau ↗
+            </Button>
             <Button
               onClick={handleSave}
-              disabled={saving}
-              className="font-mono text-xs uppercase tracking-[0.15em] bg-primary text-primary-foreground hover:bg-gold-hover"
+              disabled={saving || !hasUnsavedChanges}
+              className="font-mono text-xs uppercase tracking-[0.15em] bg-primary text-primary-foreground hover:bg-gold-hover disabled:opacity-40"
             >
               {saving ? "Speichert..." : "Speichern"}
             </Button>
@@ -517,6 +710,21 @@ const Admin = () => {
 
                     {isExpanded && (
                       <div className="pb-4 pl-[52px] space-y-3">
+                        {/* Replace input (shared per artwork) */}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          ref={(el) => { replaceRefs.current[artwork.id] = el; }}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f && replacingImage?.artworkId === artwork.id) {
+                              handleImageReplace(replacingImage.artworkId, replacingImage.src, f);
+                            }
+                            e.target.value = "";
+                            setReplacingImage(null);
+                          }}
+                        />
                         {/* Image grid */}
                         <div className="flex flex-wrap gap-2">
                           {orderedImages.map((src, i) => {
@@ -532,6 +740,9 @@ const Admin = () => {
                                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1">
                                     <button onClick={() => setImageHidden(artwork.id, src, !hidden)} className="text-white text-sm p-0.5" title={hidden ? "Zeigen" : "Ausblenden"}>
                                       {hidden ? "👁" : "🚫"}
+                                    </button>
+                                    <button onClick={() => { setReplacingImage({ artworkId: artwork.id, src }); replaceRefs.current[artwork.id]?.click(); }} className="text-white text-sm p-0.5" title="Ersetzen">
+                                      🔄
                                     </button>
                                     <button onClick={() => handleImageDelete(artwork.id, src)} className="text-white text-sm p-0.5" title="Löschen">
                                       🗑
@@ -575,8 +786,32 @@ const Admin = () => {
                           <p className="font-mono text-[10px] text-muted-foreground">Maximum 15 Bilder erreicht</p>
                         )}
 
+                        {/* Artwork status + server sync */}
+                        <div className="flex flex-wrap items-center gap-3 pt-1 border-t border-border/30">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Status:</span>
+                            <select
+                              value={getArtworkStatus(artwork.id)}
+                              onChange={(e) => setArtworkStatus(artwork.id, e.target.value as ArtworkOverride["status"])}
+                              className="font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                            >
+                              <option value="available">Verfügbar</option>
+                              <option value="sold">Verkauft</option>
+                              <option value="on-loan">Verliehen</option>
+                              <option value="not-for-sale">Nicht käuflich</option>
+                            </select>
+                          </div>
+                          <button
+                            onClick={() => syncServerImages(artwork.id, orderedImages)}
+                            disabled={syncingArtwork === artwork.id}
+                            className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground border border-border/50 px-2 py-1 hover:border-foreground/30 hover:text-foreground transition-colors disabled:opacity-40"
+                            title="Server-Bilder prüfen und fehlende hinzufügen"
+                          >
+                            {syncingArtwork === artwork.id ? "Prüfe..." : "↻ Server-Sync"}
+                          </button>
+                        </div>
                         <p className="font-mono text-[10px] text-muted-foreground">
-                          Hover: 🚫 ausblenden · 🗑 archivieren · ← → sortieren
+                          Hover: 🚫 ausblenden · 🔄 ersetzen · 🗑 archivieren · ← → sortieren
                         </p>
                       </div>
                     )}
@@ -612,9 +847,17 @@ const Admin = () => {
                       className="text-xs h-8"
                     />
                   </div>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    ref={(el) => { sliderReplaceRefs.current[i] = el; }}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleSliderReplace(i, f); e.target.value = ""; }}
+                  />
                   <div className="flex gap-1">
                     <button onClick={() => moveHeroSlide(i, i - 1)} disabled={i === 0} className="font-mono text-xs px-2 py-1 border border-border/50 disabled:opacity-20">↑</button>
                     <button onClick={() => moveHeroSlide(i, i + 1)} disabled={i === heroSlides.length - 1} className="font-mono text-xs px-2 py-1 border border-border/50 disabled:opacity-20">↓</button>
+                    <button onClick={() => sliderReplaceRefs.current[i]?.click()} disabled={sliderReplacing === i} className="font-mono text-xs px-2 py-1 border border-border/50 hover:bg-border/20 disabled:opacity-20" title="Ersetzen">🔄</button>
                     <button onClick={() => removeHeroSlide(i)} className="font-mono text-xs px-2 py-1 border border-border/50 text-destructive hover:bg-destructive/10">✕</button>
                   </div>
                 </div>
@@ -636,6 +879,35 @@ const Admin = () => {
               >
                 {sliderUploading ? "Lädt hoch..." : "+ Neues Bild hochladen"}
               </Button>
+            </div>
+
+            <Separator className="my-6" />
+
+            <SectionHeading>Texte auf der Startseite</SectionHeading>
+            <p className="font-body text-sm text-muted-foreground mb-5">
+              Diese Texte erscheinen über dem Hero-Slider.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <Label className="font-mono text-[10px] uppercase tracking-wider">Tagline</Label>
+                <Input
+                  value={draftOverride.hero?.tagline ?? ""}
+                  onChange={(e) => setDraftOverride({ ...draftOverride, hero: { ...draftOverride.hero, tagline: e.target.value } })}
+                  placeholder="Künstler · Relief · Filz"
+                  className="mt-1 text-sm"
+                />
+                <p className="font-mono text-[10px] text-muted-foreground mt-1">Standard: "Künstler · Relief · Filz"</p>
+              </div>
+              <div>
+                <Label className="font-mono text-[10px] uppercase tracking-wider">Button-Text</Label>
+                <Input
+                  value={draftOverride.hero?.ctaText ?? ""}
+                  onChange={(e) => setDraftOverride({ ...draftOverride, hero: { ...draftOverride.hero, ctaText: e.target.value } })}
+                  placeholder="Zu den Arbeiten"
+                  className="mt-1 text-sm"
+                />
+                <p className="font-mono text-[10px] text-muted-foreground mt-1">Standard: "Zu den Arbeiten"</p>
+              </div>
             </div>
           </section>
         )}

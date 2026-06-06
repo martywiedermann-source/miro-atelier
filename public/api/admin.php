@@ -115,6 +115,23 @@ switch ($action) {
         if ($written === false) err('Schreiben fehlgeschlagen – Schreibrechte prüfen', 500);
         ok();
 
+    // ── Bilder auf Server auflisten (für Sync) ────────────────────────────
+    case 'list_images':
+        requireAuth();
+        $artworkId = safeId($_GET['artwork_id'] ?? '');
+        if (!$artworkId) err('Ungültige artwork_id');
+
+        $dir = GALLERY_DIR . $artworkId . '/';
+        if (!is_dir($dir)) { echo json_encode(['ok' => true, 'images' => []], JSON_UNESCAPED_UNICODE); exit; }
+
+        $files = glob($dir . '*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}', GLOB_BRACE) ?: [];
+        sort($files);
+        $images = array_map(
+            fn($f) => '/images/gallery/' . $artworkId . '/' . basename($f),
+            $files
+        );
+        ok(['images' => array_values($images)]);
+
     // ── Bild-Upload (Galerie) ─────────────────────────────────────────────────
     case 'upload_image':
         requireAuth();
@@ -174,6 +191,20 @@ switch ($action) {
         $filename = 'slide-' . time() . '.' . $mimeMap[$mime];
         move_uploaded_file($file['tmp_name'], SLIDER_DIR . $filename);
         ok(['path' => '/images/slider/' . $filename]);
+
+    // ── Slider-Bild löschen (→ archiv/) ──────────────────────────────────────
+    case 'delete_slider':
+        requireAuth();
+        $filename = safeFilename($_POST['filename'] ?? '');
+        if (!$filename) err('Fehlende Parameter');
+
+        $src = SLIDER_DIR . $filename;
+        if (!file_exists($src)) err('Datei nicht gefunden', 404);
+
+        $archiveDir = SLIDER_DIR . 'archiv/';
+        if (!is_dir($archiveDir)) mkdir($archiveDir, 0755, true);
+        rename($src, $archiveDir . $filename);
+        ok();
 
     // ── Bild löschen (→ archiv/) ──────────────────────────────────────────────
     case 'delete_image':

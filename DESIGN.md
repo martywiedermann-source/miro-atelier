@@ -75,6 +75,32 @@ Definiert in `src/index.css` als CSS-Custom-Properties, eingebunden über `tailw
 
 Eingebunden über Google Fonts, konfiguriert in `tailwind.config.ts`.
 
+### Typografie-Hierarchie (4 Ebenen)
+
+| Rolle | Font | Tailwind | Einsatz |
+|---|---|---|---|
+| **Logo + Große Titel** | Bodoni Moda | `font-bodoni` | Logo MW, Hero-Name, künstlerische Akzente |
+| **Überschriften / Display** | Cormorant Garamond | `font-display` | Sektionsüberschriften, Zitate, Kunstwerktitel |
+| **Fließtext / UI** | Outfit | `font-body` | Body-Text, Formulare, Beschreibungen |
+| **Labels / Metadaten** | Space Mono | `font-mono` | Kategorien, Jahreszahlen, Buttons, Navigation |
+| **Galerie-Einschübe** | Abel | `font-abel` | Rubrecht-Sektion, externe redaktionelle Texte |
+
+**Prinzip:** Bodoni = Identität & Wirkung · Cormorant = Eleganz & Text · Space Mono = Präzision & Kontrast
+
+---
+
+### font-bodoni — Bodoni Moda *(Logo & Große Titel)*
+
+```css
+font-family: "Bodoni Moda", Didot, "Bodoni 72", Georgia, serif;
+```
+
+- **Charakter:** Hoher Kontrast zwischen dünnen und dicken Linien, feine Serifen, klassisch-galerieartig. Didot/Bodoni-Stil.
+- **Einsatz:** Logo `MW` im Header, Hero-Überschrift `Miroslav Wiedermann`, große künstlerische Akzente
+- **Gewicht:** `font-normal` (400) — der Bodoni-Kontrast wirkt bereits ohne Bold
+- **Nicht für:** Fließtext, kleine Navigationstexte (feine Linien werden unlesbar < 14px)
+- **Orientierung:** Klassische Kunstgalerien, Mode-Magazine (Vogue nutzt Didot), Hochpreisige Brands
+
 ### font-display — Cormorant Garamond
 
 ```css
