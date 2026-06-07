@@ -18,6 +18,29 @@ function newArtworkToArtwork(n: NewArtwork): Artwork {
   };
 }
 
+function applySortMode(
+  list: Artwork[],
+  mode: string | undefined,
+  customOrder: string[] | undefined
+): Artwork[] {
+  if (mode === "custom" && customOrder?.length) {
+    const idx = new Map(customOrder.map((id, i) => [id, i]));
+    return [...list].sort(
+      (a, b) => (idx.get(a.id) ?? 9999) - (idx.get(b.id) ?? 9999)
+    );
+  }
+  if (mode === "year-desc") {
+    return [...list].sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
+  }
+  if (mode === "year-asc") {
+    return [...list].sort((a, b) => (a.year ?? 0) - (b.year ?? 0));
+  }
+  if (mode === "alpha") {
+    return [...list].sort((a, b) => a.title.localeCompare(b.title, "de"));
+  }
+  return list;
+}
+
 export function useVisibleArtworks(): Artwork[] {
   const { effectiveOverride } = useConfig();
   const overrides = effectiveOverride.artworks ?? {};
@@ -33,7 +56,12 @@ export function useVisibleArtworks(): Artwork[] {
     .filter((n) => n.visible !== false)
     .map(newArtworkToArtwork);
 
-  return [...staticVisible, ...newVisible];
+  const combined = [...staticVisible, ...newVisible];
+  return applySortMode(
+    combined,
+    effectiveOverride.artworkSort,
+    effectiveOverride.artworkOrder
+  );
 }
 
 export function useVisibleImages(artwork: Artwork): string[] {
@@ -48,7 +76,14 @@ export function useVisibleImages(artwork: Artwork): string[] {
   const ordered = order
     ? [...order.filter((p) => base.includes(p)), ...base.filter((p) => !order.includes(p))]
     : base;
-  return ordered.filter((src) => !hidden.has(src));
+  const visible = ordered.filter((src) => !hidden.has(src));
+
+  // Move coverImage to front
+  const cover = o?.coverImage;
+  if (cover && visible.includes(cover) && visible[0] !== cover) {
+    return [cover, ...visible.filter((s) => s !== cover)];
+  }
+  return visible;
 }
 
 export function useArtworkMeta(artwork: Artwork) {
@@ -63,11 +98,13 @@ export function useArtworkMeta(artwork: Artwork) {
     category: o?.category ?? artwork.category,
     seoTitle: o?.seoTitle,
     seoDescription: o?.seoDescription,
+    focalPoint: o?.focalPoint ?? "center center",
+    coverImage: o?.coverImage,
   };
 }
 
 export function useEffectiveEvents(): ArtEvent[] {
   const { effectiveOverride } = useConfig();
-  const evs = effectiveOverride.events ?? staticEvents;
+  const evs = effectiveOverride.events?.length ? effectiveOverride.events : staticEvents;
   return evs.filter((e) => e.visible !== false);
 }

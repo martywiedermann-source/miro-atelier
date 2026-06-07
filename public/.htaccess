@@ -2,6 +2,9 @@ Options -MultiViews
 RewriteEngine On
 RewriteBase /
 
+# /admin immer an React-SPA übergeben (ignoriert physischen /admin/-Ordner)
+RewriteRule ^admin(/.*)?$ /index.html [L]
+
 # Bestehende Dateien direkt ausliefern
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d

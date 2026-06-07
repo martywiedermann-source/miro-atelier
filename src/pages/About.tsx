@@ -15,14 +15,14 @@ const About = () => {
         <img
           src="/images/about-banner.jpg"
           alt="Miroslav Wiedermann"
-          className="w-full h-auto object-cover"
+          className="w-full max-h-[55vh] object-cover object-top"
         />
       </div>
 
       <div className="px-6">
         <div className="container mx-auto">
           {/* Bio section — 3 parts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 py-24 md:py-40">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 py-16 md:py-24">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}

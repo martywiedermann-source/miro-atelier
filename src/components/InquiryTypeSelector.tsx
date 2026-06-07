@@ -1,19 +1,15 @@
+export const DEFAULT_INQUIRY_TYPES = ["Werkankauf", "Ausstellungsanfrage", "Pressenanfrage", "Sonstiges"];
+
 interface InquiryTypeSelectorProps {
   value: string;
   onChange: (value: string) => void;
+  types?: string[];
 }
 
-const inquiryTypes = [
-  "Werkankauf",
-  "Ausstellungsanfrage",
-  "Pressenanfrage",
-  "Sonstiges",
-];
-
-const InquiryTypeSelector = ({ value, onChange }: InquiryTypeSelectorProps) => {
+const InquiryTypeSelector = ({ value, onChange, types = DEFAULT_INQUIRY_TYPES }: InquiryTypeSelectorProps) => {
   return (
     <div className="flex flex-wrap gap-2">
-      {inquiryTypes.map((type) => (
+      {types.map((type) => (
         <button
           key={type}
           type="button"

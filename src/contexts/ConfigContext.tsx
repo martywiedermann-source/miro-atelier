@@ -6,6 +6,8 @@ export interface ArtworkOverride {
   visible?: boolean;
   hiddenImages?: string[];
   imageOrder?: string[];
+  coverImage?: string;
+  focalPoint?: string;
   status?: "available" | "sold" | "on-loan" | "not-for-sale";
   title?: string;
   year?: number | null;
@@ -36,10 +38,14 @@ export interface SiteOverride {
   version: number;
   artworks?: Record<string, ArtworkOverride>;
   newArtworks?: NewArtwork[];
+  artworkSort?: "custom" | "year-desc" | "year-asc" | "alpha";
+  artworkOrder?: string[];
   pages?: Partial<Record<keyof typeof siteConfig.pages, { enabled?: boolean }>>;
   events?: ArtEvent[];
   heroSlides?: Array<{ image: string; title: string; year: string }>;
-  hero?: { tagline?: string; ctaText?: string };
+  hero?: { tagline?: string; ctaText?: string; hideTagline?: boolean; hideCtaButton?: boolean };
+  inquiryTypes?: string[];
+  logoPath?: string;
   impressum?: Record<string, string>;
   design?: {
     colors?: { primary?: string; background?: string; foreground?: string };

@@ -34,29 +34,29 @@ const Gallery = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen pt-32 pb-24 px-6">
+      <div className="min-h-screen pt-20 pb-16 px-6">
         <div className="container mx-auto">
-          {/* Header */}
+          {/* Header — kompakt, damit Werke sofort above the fold sichtbar sind */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-16"
+            transition={{ duration: 0.4 }}
+            className="flex items-baseline gap-4 mb-5 pt-2"
           >
-            <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-4">
-              Galerie
-            </p>
-            <h1 className="font-display text-5xl md:text-7xl font-light text-foreground">
+            <h1 className="font-display text-3xl md:text-4xl font-light text-foreground">
               Werke
             </h1>
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">
+              Galerie
+            </p>
           </motion.div>
 
           {/* Filter bar */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="flex flex-wrap gap-3 mb-16"
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="flex flex-wrap gap-2 mb-8"
           >
             {categories.map((cat) => (
               <button

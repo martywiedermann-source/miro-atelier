@@ -62,6 +62,33 @@ miro-atelier-main/
 3. `./deploy.sh` ausführen
 
 
+## Git & Deployment – ABSOLUT VERBOTEN ohne explizite Freigabe
+
+- **NIEMALS `git push` ausführen** – CI/CD läuft automatisch: push → GitHub Actions → FTP → live
+- **NIEMALS `./deploy.sh` ausführen** – geht sofort auf ateliermiro.de live
+- **NIEMALS `git commit` ohne Aufforderung**
+- Vor jedem Push/Commit/Deploy: explizit fragen und Antwort abwarten
+- Aktiver Entwicklungs-Branch: `feature/admin-artwork-crud`
+
+## Terminals & Server
+
+- **Dieses Terminal:** Datei-Arbeit, Tests, Builds
+- **Dev-Server starten:** `npm run dev` im Hintergrund (oder separates Terminal)
+  - Vite: http://localhost:5173 | API: http://localhost:3001
+  - Admin lokal: http://localhost:5173/admin
+- Port belegt? `lsof -ti:3001 | xargs kill` dann neu starten
+
+## Sicherheit
+
+- **NIEMALS FTP-Passwörter, SSH-Keys oder Credentials ausgeben/zeigen/loggen**
+- FTP-Host: 94.130.144.142 | FTP-User: ateliermiromiro (Passwort nur in deploy.sh, nie anzeigen)
+
+## /admin auf live-Site (ateliermiro.de)
+
+- Route `/admin` ist auf Produktion **nicht erreichbar** (alter WebSite X5 Ordner `web/admin/` blockiert sie)
+- Lokal funktioniert `/admin` problemlos
+- Lösung steht noch aus: .htaccess anpassen oder alten Ordner umbenennen
+
 ## PFLICHTREGELN – IMMER EINHALTEN
 
 ### Vor jeder Aktion
@@ -125,9 +152,82 @@ GETRENNTE Werke – niemals zusammenführen!
 - Hero: Dots + Pfeile weiß (kein Gold mehr)
 - Node.js API-Server gebaut (server/api.mjs) → Upload funktioniert lokal
 - npm run dev startet jetzt API + Vite zusammen
+- Admin-Panel CRUD: bestehende Werke editieren + neue Werke anlegen (Branch: feature/admin-artwork-crud)
+- Admin-Panel Persistenz: save_config schreibt korrekt in public/site-override.json
+- Admin-Panel Upload-Bug behoben: doppeltes Multer entfernt, JSON-Parsing getrennt
+
+## Admin-Panel Status (feature/admin-artwork-crud)
+- Bestehende Werke: Titel, Technik, Maße, Jahr, Kategorie, Beschreibung, SEO editierbar ✓
+- Neue Werke anlegen: Formular komplett, speichert in newArtworks[] ✓
+- Bildupload: funktioniert für bestehende + neue Werke ✓
+- Persistenz nach Reload: funktioniert ✓ (getestet mit curl-Diagnose)
+- Lokal testen: http://localhost:5173/admin (nach `npm run dev`)
+
+## Qualitätsregeln – Fehlerklassen aus bisherigen Sessions
+
+Diese Regeln basieren auf echten Bugs die aufgetreten sind. IMMER einhalten.
+
+### Regel 1: Array-Fallback – `?.length` statt `??`
+
+**FALSCH:**
+```ts
+const events = effectiveOverride.events ?? staticEvents;
+```
+**RICHTIG:**
+```ts
+const events = effectiveOverride.events?.length ? effectiveOverride.events : staticEvents;
+```
+**Warum:** `??` gibt den Fallback nur bei `null`/`undefined` zurück — nicht bei `[]`. Eine leere Config-Array (`[]`) unterdrückt so alle statischen Daten. Immer `?.length` verwenden wenn ein leeres Array als "nicht konfiguriert" gilt.
+
+**Gilt für alle Arrays in `SiteOverride`:** events, heroSlides, newArtworks, inquiryTypes.
+
+---
+
+### Regel 2: Neue Config-Felder – 3 Stellen gleichzeitig
+
+Wenn ein neues Admin-editierbares Feld eingebaut wird, IMMER alle 3 Stellen:
+
+1. **Typ:** Feld in `SiteOverride` interface (ConfigContext.tsx) eintragen
+2. **Init:** Admin-State aus `effectiveOverride.feldName` initialisieren (nicht hardcoded)
+3. **Speichern:** Bei Änderung via `autoSave({ ...draftOverride, feldName: value })` persistieren
+
+**Beispiel:** Logo-Pfad → erst `logoPath?: string` in SiteOverride, dann `useState(effectiveOverride.logoPath ?? "/logo/logo-dark.jpg")`, dann `autoSave({ ...draftOverride, logoPath: res.path })`.
+
+Fehlt eine der 3 Stellen → Feld geht nach Reload verloren.
+
+---
+
+### Regel 3: Konsistenz zwischen Admin und Public-Site
+
+Wenn eine Logik in `Admin.tsx` geändert wird, IMMER prüfen ob dieselbe Logik auch in `src/lib/hooks.ts` (für die öffentliche Seite) existiert. Beide müssen identisch sein.
+
+**Konkret:** Admin und `useEffectiveEvents()` / `useVisibleArtworks()` müssen denselben Fallback-Mechanismus verwenden.
+
+---
+
+### Regel 4: Vorschau-Verhalten verstehen
+
+- **VORSCHAU-Button** öffnet neuen Tab → sieht nur **gespeicherte** Config (site-override.json)
+- **Code-Änderungen** (CSS, Komponenten) sind sofort im Dev-Server sichtbar
+- **Config-Änderungen** sind erst nach "SPEICHERN" + VORSCHAU sichtbar
+- Der VORSCHAU-Button speichert jetzt automatisch vor dem Öffnen
+
+Beim Testen nach Config-Änderungen: erst "Speichern" bestätigen, dann Vorschau prüfen.
+
+---
+
+### Regel 5: Nach jeder Änderung an Config-Logik testen
+
+Checkliste nach Änderungen an Admin-Panel oder hooks.ts:
+- [ ] `npm run build` läuft ohne Fehler
+- [ ] Lokale Dev-Site zeigt Änderung (http://localhost:5173)
+- [ ] Admin gespeichert → VORSCHAU zeigt Änderung im neuen Tab
+- [ ] Seite neu laden → Änderung bleibt (Persistenz)
 
 ## Offene Aufgaben
-1. FTP-Zugangsdaten in deploy.sh eintragen → `./deploy.sh` ausführen
-2. Hero-Slider: andere/bessere Bilder wählen (via Admin-Panel → Hero-Tab)
-3. Morse Text: echte Fotos des Werks aufnehmen → gallery/morse-text/
-4. Mehrsprachigkeit (DE/EN/ES/FR/AR/CS/ZH) mit react-i18next
+1. Admin-Panel lokal fertig testen (User testet gerade)
+2. Branch feature/admin-artwork-crud → main mergen (erst nach User-Freigabe)
+3. /admin auf Produktion freischalten (web/admin/ Konflikt lösen)
+4. Hero-Slider: bessere Bilder wählen (via Admin → Hero-Tab)
+5. Morse Text: echte Fotos aufnehmen → gallery/morse-text/
+6. Mehrsprachigkeit (DE/EN/ES/FR/AR/CS/ZH) mit react-i18next

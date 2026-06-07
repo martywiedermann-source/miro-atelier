@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
@@ -36,6 +36,10 @@ const Lightbox = ({ artwork, onClose, onNavigate }: LightboxProps) => {
   const [imgIndex, setImgIndex] = useState(0);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [zoom, setZoom] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const isPanning = useRef(false);
+  const panStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
 
   // Sidebar starts closed — user opens with "i"
   useEffect(() => {
@@ -44,6 +48,8 @@ const Lightbox = ({ artwork, onClose, onNavigate }: LightboxProps) => {
 
   useEffect(() => {
     setImgIndex(0);
+    setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
     if (emblaApi) emblaApi.scrollTo(0, true);
   }, [artwork?.id, emblaApi]);
 
@@ -91,6 +97,33 @@ const Lightbox = ({ artwork, onClose, onNavigate }: LightboxProps) => {
 
   const images = useVisibleImages(artwork ?? EMPTY_ARTWORK);
   const meta = useArtworkMeta(artwork ?? EMPTY_ARTWORK);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    setZoom((z) => Math.min(4, Math.max(1, z - e.deltaY * 0.002)));
+    if (zoom <= 1) setPanOffset({ x: 0, y: 0 });
+  }, [zoom]);
+
+  const handleDoubleClick = useCallback(() => {
+    setZoom((z) => z > 1 ? 1 : 2.5);
+    setPanOffset({ x: 0, y: 0 });
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (zoom <= 1) return;
+    isPanning.current = true;
+    panStart.current = { x: e.clientX, y: e.clientY, ox: panOffset.x, oy: panOffset.y };
+  }, [zoom, panOffset]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isPanning.current) return;
+    setPanOffset({
+      x: panStart.current.ox + e.clientX - panStart.current.x,
+      y: panStart.current.oy + e.clientY - panStart.current.y,
+    });
+  }, []);
+
+  const handleMouseUp = useCallback(() => { isPanning.current = false; }, []);
 
   return (
     <AnimatePresence>
@@ -148,7 +181,24 @@ const Lightbox = ({ artwork, onClose, onNavigate }: LightboxProps) => {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Image area */}
-            <div className="relative flex-1 min-h-0 flex items-center justify-center bg-black/5">
+            <div
+              className="relative flex-1 min-h-0 flex items-center justify-center bg-black/5"
+              onWheel={handleWheel}
+              onDoubleClick={handleDoubleClick}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              style={{ cursor: zoom > 1 ? "grab" : "zoom-in" }}
+            >
+              {zoom > 1 && (
+                <button
+                  className="absolute top-2 right-2 z-20 font-mono text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground border border-border/50 px-2 py-1 bg-background/80 rounded-sm"
+                  onClick={(e) => { e.stopPropagation(); setZoom(1); setPanOffset({ x: 0, y: 0 }); }}
+                >
+                  Zoom zurücksetzen
+                </button>
+              )}
               {images.length > 0 ? (
                 <>
                   <div className="overflow-hidden w-full h-full" ref={emblaRef}>
@@ -156,13 +206,18 @@ const Lightbox = ({ artwork, onClose, onNavigate }: LightboxProps) => {
                       {images.map((src, i) => (
                         <div
                           key={i}
-                          className="min-w-0 shrink-0 grow-0 basis-full h-full flex items-center justify-center p-4 md:p-8"
+                          className="min-w-0 shrink-0 grow-0 basis-full h-full flex items-center justify-center p-1 md:p-3"
                         >
                           <img
                             src={src}
                             alt={`${meta.title} ${i + 1}`}
                             className="max-h-full max-w-full object-contain select-none"
                             draggable={false}
+                            style={{
+                              transform: `scale(${zoom}) translate(${panOffset.x / zoom}px, ${panOffset.y / zoom}px)`,
+                              transition: isPanning.current ? "none" : "transform 0.2s ease",
+                              willChange: "transform",
+                            }}
                           />
                         </div>
                       ))}

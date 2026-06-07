@@ -194,14 +194,18 @@ const Admin = () => {
   const [syncingArtwork, setSyncingArtwork] = useState<string | null>(null);
   const dragFrom = useRef<{ artworkId: string; index: number } | null>(null);
 
-  // Logo state
-  const [logoPath, setLogoPath] = useState<string>("/logo/logo-dark.jpg");
+  // Logo state — init from saved config so it persists across reloads
+  const [logoPath, setLogoPath] = useState<string>(effectiveOverride.logoPath ?? "/logo/logo-dark.jpg");
+  const [logoLoadError, setLogoLoadError] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoRef = useRef<HTMLInputElement | null>(null);
+
+  // Inquiry types state
+  const [newInquiryInput, setNewInquiryInput] = useState("");
   const [dragOverKey, setDragOverKey] = useState<string | null>(null);
 
   // Event state
-  const effectiveEvents: ArtEvent[] = effectiveOverride.events ?? staticEvents;
+  const effectiveEvents: ArtEvent[] = effectiveOverride.events?.length ? effectiveOverride.events : staticEvents;
   const [editingEvent, setEditingEvent] = useState<ArtEvent | null>(null);
   const [isNewEvent, setIsNewEvent] = useState(false);
   const [eventErrors, setEventErrors] = useState<Partial<Record<keyof ArtEvent, string>>>({});
@@ -249,7 +253,7 @@ const Admin = () => {
   // ── Draft helpers ───────────────────────────────────────────────────────────
 
   function setPageEnabled(key: string, enabled: boolean) {
-    setDraftOverride({ ...draftOverride, pages: { ...draftOverride.pages, [key]: { enabled } } });
+    autoSave({ ...draftOverride, pages: { ...draftOverride.pages, [key]: { enabled } } });
   }
 
   function getPageEnabled(key: string): boolean {
@@ -287,9 +291,9 @@ const Admin = () => {
   function getImageOrder(artworkId: string, baseImages: string[]): string[] {
     const order = draftOverride.artworks?.[artworkId]?.imageOrder;
     if (!order) return baseImages;
-    const reordered = order.filter((p) => baseImages.includes(p));
-    const rest = baseImages.filter((p) => !reordered.includes(p));
-    return [...reordered, ...rest];
+    // Include ALL paths from order (incl. newly uploaded), then append baseImages not yet listed
+    const rest = baseImages.filter((p) => !order.includes(p));
+    return [...order, ...rest];
   }
 
   function moveImage(artworkId: string, baseImages: string[], from: number, to: number) {
@@ -467,7 +471,10 @@ const Admin = () => {
     try {
       const res = await apiUpload("upload_logo", form);
       if (res.ok && res.path) {
-        setLogoPath((res.path as string) + "?t=" + Date.now());
+        const newPath = (res.path as string) + "?t=" + Date.now();
+        setLogoPath(newPath);
+        setLogoLoadError(false);
+        await autoSave({ ...draftOverride, logoPath: res.path as string });
         toast.success("Logo hochgeladen");
       } else {
         toast.error((res.error as string) ?? "Upload fehlgeschlagen");
@@ -583,6 +590,42 @@ const Admin = () => {
     });
   }
 
+  // ── Cover image + focal point helpers ──────────────────────────────────────
+
+  function setCoverImage(artworkId: string, src: string) {
+    const current = draftOverride.artworks?.[artworkId]?.coverImage;
+    const next = current === src ? undefined : src;
+    autoSave({
+      ...draftOverride,
+      artworks: { ...draftOverride.artworks, [artworkId]: { ...draftOverride.artworks?.[artworkId], coverImage: next } },
+    });
+  }
+
+  function getCoverImage(artworkId: string): string | undefined {
+    return draftOverride.artworks?.[artworkId]?.coverImage;
+  }
+
+  function setFocalPoint(artworkId: string, value: string) {
+    autoSave({
+      ...draftOverride,
+      artworks: { ...draftOverride.artworks, [artworkId]: { ...draftOverride.artworks?.[artworkId], focalPoint: value } },
+    });
+  }
+
+  function getFocalPoint(artworkId: string): string {
+    return draftOverride.artworks?.[artworkId]?.focalPoint ?? "center center";
+  }
+
+  // ── Artwork sort helpers ────────────────────────────────────────────────────
+
+  function setArtworkSort(mode: string) {
+    autoSave({ ...draftOverride, artworkSort: mode as "custom" | "year-desc" | "year-asc" | "alpha" });
+  }
+
+  function getArtworkSort(): string {
+    return draftOverride.artworkSort ?? "custom";
+  }
+
   // ── New artwork helpers ─────────────────────────────────────────────────────
 
   const EMPTY_NEW_ARTWORK: Omit<NewArtwork, "id"> = {
@@ -595,10 +638,12 @@ const Admin = () => {
   const [newArtworkErrors, setNewArtworkErrors] = useState<Partial<Record<keyof NewArtwork, string>>>({});
   const [newArtworkUploading, setNewArtworkUploading] = useState(false);
   const newArtworkUploadRef = useRef<HTMLInputElement>(null);
+  const newArtworkFormRef = useRef<HTMLDivElement>(null);
 
   function startNewArtwork() {
     setNewArtworkForm({ id: `werk-${Date.now()}`, ...EMPTY_NEW_ARTWORK });
     setNewArtworkErrors({});
+    setTimeout(() => newArtworkFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
   function validateNewArtwork(a: NewArtwork): boolean {
@@ -729,7 +774,7 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-background pt-24 pb-20 px-6">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
 
         {/* Header */}
         <div className="flex items-start justify-between mb-8 gap-4 flex-wrap">
@@ -745,7 +790,10 @@ const Admin = () => {
           <div className="flex items-center gap-2 flex-wrap">
             <Button
               variant="outline" size="sm"
-              onClick={() => window.open("/", "_blank")}
+              onClick={async () => {
+                if (hasUnsavedChanges) await autoSave(draftOverride);
+                window.open("/", "_blank");
+              }}
               className="font-mono text-xs uppercase tracking-[0.15em]"
             >
               Vorschau ↗
@@ -784,9 +832,22 @@ const Admin = () => {
         {/* ── WERKE ──────────────────────────────────────────────────────── */}
         {activeTab === "werke" && (
           <section>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
               <SectionHeading>Werke</SectionHeading>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Reihenfolge:</span>
+                  <select
+                    value={getArtworkSort()}
+                    onChange={(e) => setArtworkSort(e.target.value)}
+                    className="font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="custom">Standard</option>
+                    <option value="year-desc">Neueste zuerst</option>
+                    <option value="year-asc">Älteste zuerst</option>
+                    <option value="alpha">Alphabetisch</option>
+                  </select>
+                </div>
                 <span className="font-mono text-xs text-muted-foreground">
                   {visibleCount} / {artworks.length + (draftOverride.newArtworks?.length ?? 0)} sichtbar
                 </span>
@@ -873,7 +934,16 @@ const Admin = () => {
                                     className={`w-16 h-16 object-cover ${hidden ? "opacity-25 grayscale" : ""}`}
                                     draggable={false}
                                   />
+                                  {/* Cover badge */}
+                                  {getCoverImage(artwork.id) === src && (
+                                    <div className="absolute top-0.5 left-0.5 bg-primary text-primary-foreground font-mono text-[7px] px-1 py-0.5 leading-none z-10">
+                                      COVER
+                                    </div>
+                                  )}
                                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                                    <button onClick={() => setCoverImage(artwork.id, src)} className="text-white text-sm p-0.5" title="Als Titelbild setzen">
+                                      {getCoverImage(artwork.id) === src ? "★" : "☆"}
+                                    </button>
                                     <button onClick={() => setImageHidden(artwork.id, src, !hidden)} className="text-white text-sm p-0.5" title={hidden ? "Zeigen" : "Ausblenden"}>
                                       {hidden ? "👁" : "🚫"}
                                     </button>
@@ -925,20 +995,20 @@ const Admin = () => {
                         {/* Metadaten-Formular */}
                         <div className="space-y-2 pt-2 border-t border-border/30">
                           <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Metadaten</p>
-                          {[
-                            { field: "title" as const,       label: "Titel",   placeholder: artwork.title,                type: "text"   },
-                            { field: "medium" as const,      label: "Technik", placeholder: artwork.medium || "Filz, Acryl", type: "text" },
-                            { field: "dimensions" as const,  label: "Maße",    placeholder: artwork.dimensions || "165 × 125 cm", type: "text" },
-                            { field: "year" as const,        label: "Jahr",    placeholder: String(artwork.year ?? ""),   type: "number" },
-                          ].map(({ field, label, placeholder, type }) => (
+                          {([
+                            { field: "title" as const,      label: "Titel",   staticVal: artwork.title,               hint: artwork.title,          type: "text"   },
+                            { field: "medium" as const,     label: "Technik", staticVal: artwork.medium ?? "",        hint: "Filz, Acryl",          type: "text"   },
+                            { field: "dimensions" as const, label: "Maße",    staticVal: artwork.dimensions ?? "",    hint: "165 × 125 cm",         type: "text"   },
+                            { field: "year" as const,       label: "Jahr",    staticVal: String(artwork.year ?? ""),  hint: String(artwork.year ?? ""), type: "number" },
+                          ] as const).map(({ field, label, staticVal, hint, type }) => (
                             <div key={field} className="flex items-center gap-2">
                               <span className="font-mono text-[10px] text-muted-foreground w-16 shrink-0">{label}</span>
                               <input
                                 type={type}
-                                defaultValue={getArtworkMetaField(artwork.id, field, placeholder)}
+                                defaultValue={getArtworkMetaField(artwork.id, field, staticVal)}
                                 key={`${field}-${artwork.id}`}
                                 onBlur={(e) => setArtworkMetaField(artwork.id, field, e.target.value)}
-                                placeholder={placeholder}
+                                placeholder={hint}
                                 className="flex-1 font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                             </div>
@@ -967,6 +1037,25 @@ const Admin = () => {
                               rows={2}
                               className="flex-1 font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                             />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-[10px] text-muted-foreground w-16 shrink-0">Mobilfokus</span>
+                            <select
+                              value={getFocalPoint(artwork.id)}
+                              onChange={(e) => setFocalPoint(artwork.id, e.target.value)}
+                              className="flex-1 font-mono text-[10px] border border-border/50 bg-background px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                              title="Bildfokus beim Zuschneiden (object-position für Mobilansicht)"
+                            >
+                              <option value="center center">Mitte</option>
+                              <option value="center top">Oben</option>
+                              <option value="center bottom">Unten</option>
+                              <option value="left center">Links</option>
+                              <option value="right center">Rechts</option>
+                              <option value="left top">Oben links</option>
+                              <option value="right top">Oben rechts</option>
+                              <option value="left bottom">Unten links</option>
+                              <option value="right bottom">Unten rechts</option>
+                            </select>
                           </div>
                           <div className="flex items-center gap-2 pt-1">
                             <span className="font-mono text-[10px] text-muted-foreground w-16 shrink-0">SEO-Titel</span>
@@ -1062,7 +1151,7 @@ const Admin = () => {
 
             {/* ── Neues Werk Formular ── */}
             {newArtworkForm && (
-              <div className="mt-6 p-5 border border-primary/30 bg-surface-warm">
+              <div ref={newArtworkFormRef} className="mt-6 p-5 border border-primary/30 bg-surface-warm">
                 <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-primary mb-5">
                   {(draftOverride.newArtworks ?? []).find((w) => w.id === newArtworkForm.id) ? "Werk bearbeiten" : "Neues Werk anlegen"}
                 </h3>
@@ -1241,15 +1330,35 @@ const Admin = () => {
               Diese Texte erscheinen über dem Hero-Slider.
             </p>
             <div className="space-y-4">
+              <div className="flex items-center justify-between py-2 border-b border-border/50">
+                <div>
+                  <p className="font-body text-sm">Tagline anzeigen</p>
+                  <p className="font-mono text-[10px] text-muted-foreground">z.B. "Künstler · Relief · Filz"</p>
+                </div>
+                <Switch
+                  checked={!(draftOverride.hero?.hideTagline ?? false)}
+                  onCheckedChange={(v) => setDraftOverride({ ...draftOverride, hero: { ...draftOverride.hero, hideTagline: !v } })}
+                />
+              </div>
               <div>
-                <Label className="font-mono text-[10px] uppercase tracking-wider">Tagline</Label>
+                <Label className="font-mono text-[10px] uppercase tracking-wider">Tagline-Text</Label>
                 <Input
                   value={draftOverride.hero?.tagline ?? ""}
                   onChange={(e) => setDraftOverride({ ...draftOverride, hero: { ...draftOverride.hero, tagline: e.target.value } })}
                   placeholder="Künstler · Relief · Filz"
                   className="mt-1 text-sm"
+                  disabled={draftOverride.hero?.hideTagline ?? false}
                 />
-                <p className="font-mono text-[10px] text-muted-foreground mt-1">Standard: "Künstler · Relief · Filz"</p>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-border/50">
+                <div>
+                  <p className="font-body text-sm">Button anzeigen</p>
+                  <p className="font-mono text-[10px] text-muted-foreground">z.B. "Zu den Arbeiten"</p>
+                </div>
+                <Switch
+                  checked={!(draftOverride.hero?.hideCtaButton ?? false)}
+                  onCheckedChange={(v) => setDraftOverride({ ...draftOverride, hero: { ...draftOverride.hero, hideCtaButton: !v } })}
+                />
               </div>
               <div>
                 <Label className="font-mono text-[10px] uppercase tracking-wider">Button-Text</Label>
@@ -1258,8 +1367,8 @@ const Admin = () => {
                   onChange={(e) => setDraftOverride({ ...draftOverride, hero: { ...draftOverride.hero, ctaText: e.target.value } })}
                   placeholder="Zu den Arbeiten"
                   className="mt-1 text-sm"
+                  disabled={draftOverride.hero?.hideCtaButton ?? false}
                 />
-                <p className="font-mono text-[10px] text-muted-foreground mt-1">Standard: "Zu den Arbeiten"</p>
               </div>
             </div>
           </section>
@@ -1269,7 +1378,7 @@ const Admin = () => {
         {activeTab === "seiten" && (
           <section>
             <SectionHeading>Seiten</SectionHeading>
-            <div className="space-y-3">
+            <div className="space-y-3 mb-8">
               {Object.keys(PAGE_LABELS).map((key) => (
                 <div key={key} className="flex items-center justify-between py-2 border-b border-border/50">
                   <span className="font-body text-sm">{PAGE_LABELS[key]}</span>
@@ -1282,6 +1391,66 @@ const Admin = () => {
                 </div>
               ))}
             </div>
+
+            <Separator className="mb-6" />
+
+            {/* Kontaktformular: Anfrage-Typen */}
+            <SectionHeading>Kontaktformular – Anfrage-Typen</SectionHeading>
+            <p className="font-body text-sm text-muted-foreground mb-4">
+              Diese Optionen erscheinen als Schaltflächen im Kontaktformular.
+            </p>
+            {(() => {
+              const DEFAULT_TYPES = ["Werkankauf", "Ausstellungsanfrage", "Pressenanfrage", "Sonstiges"];
+              const types = draftOverride.inquiryTypes ?? DEFAULT_TYPES;
+              return (
+                <div className="space-y-2">
+                  {types.map((t, i) => (
+                    <div key={t} className="flex items-center gap-2 py-1 border-b border-border/40">
+                      <span className="flex-1 font-mono text-xs">{t}</span>
+                      <button
+                        onClick={() => autoSave({ ...draftOverride, inquiryTypes: types.filter((_, idx) => idx !== i) })}
+                        className="font-mono text-[10px] text-destructive border border-destructive/40 px-2 py-0.5 hover:bg-destructive/10 transition-colors"
+                        title="Entfernen"
+                      >✕</button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2 pt-2">
+                    <input
+                      type="text"
+                      value={newInquiryInput}
+                      onChange={(e) => setNewInquiryInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && newInquiryInput.trim()) {
+                          autoSave({ ...draftOverride, inquiryTypes: [...types, newInquiryInput.trim()] });
+                          setNewInquiryInput("");
+                        }
+                      }}
+                      placeholder="Neuer Zweck…"
+                      className="flex-1 font-mono text-xs border border-border/50 bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <Button
+                      variant="outline" size="sm"
+                      disabled={!newInquiryInput.trim()}
+                      onClick={() => {
+                        autoSave({ ...draftOverride, inquiryTypes: [...types, newInquiryInput.trim()] });
+                        setNewInquiryInput("");
+                      }}
+                      className="font-mono text-[10px] uppercase tracking-wider"
+                    >
+                      + Hinzufügen
+                    </Button>
+                  </div>
+                  {JSON.stringify(types) !== JSON.stringify(DEFAULT_TYPES) && (
+                    <button
+                      onClick={() => autoSave({ ...draftOverride, inquiryTypes: undefined })}
+                      className="font-mono text-[10px] text-muted-foreground hover:text-foreground transition-colors mt-1"
+                    >
+                      Auf Standard zurücksetzen
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
           </section>
         )}
 
@@ -1344,7 +1513,7 @@ const Admin = () => {
                   </div>
                   <div>
                     <Label className="font-mono text-[10px] uppercase tracking-wider">Datum *</Label>
-                    <Input value={editingEvent.date} placeholder="2025-09-15 oder XXXX-01-01" onChange={(e) => setEditingEvent({ ...editingEvent, date: e.target.value })} className={eventErrors.date ? "border-destructive" : ""} />
+                    <Input value={editingEvent.date} placeholder="2025-09-15 oder XXXX-01-01" onChange={(e) => { setEditingEvent({ ...editingEvent, date: e.target.value }); if (eventErrors.date) setEventErrors({ ...eventErrors, date: undefined }); }} className={eventErrors.date ? "border-destructive" : ""} />
                     {eventErrors.date && <p className="font-mono text-[10px] text-destructive mt-1">{eventErrors.date}</p>}
                   </div>
                   <div>
@@ -1408,12 +1577,18 @@ const Admin = () => {
             <div className="mb-8 p-4 border border-border rounded-sm">
               <p className="font-mono text-xs uppercase tracking-[0.2em] text-foreground mb-3">Logo</p>
               <div className="flex items-center gap-6">
-                <img
-                  src={logoPath}
-                  alt="Logo"
-                  className="h-16 w-auto object-contain bg-black/5 p-2 rounded"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
+                {logoLoadError ? (
+                  <div className="h-16 w-24 flex items-center justify-center bg-black/5 p-2 rounded border border-dashed border-border">
+                    <span className="font-mono text-[10px] text-muted-foreground">Kein Logo</span>
+                  </div>
+                ) : (
+                  <img
+                    src={logoPath}
+                    alt="Logo"
+                    className="h-16 w-auto object-contain bg-black/5 p-2 rounded"
+                    onError={() => setLogoLoadError(true)}
+                  />
+                )}
                 <div>
                   <Button
                     variant="outline" size="sm"

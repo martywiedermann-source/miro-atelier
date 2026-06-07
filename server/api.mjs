@@ -8,6 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC    = path.resolve(__dirname, "../public");
 const GALLERY   = path.join(PUBLIC, "images/gallery");
 const SLIDER    = path.join(PUBLIC, "images/slider");
+const LOGO_DIR  = path.join(PUBLIC, "logo");
 const OVERRIDE  = path.join(PUBLIC, "site-override.json");
 
 const app  = express();
@@ -42,6 +43,10 @@ const upload = multer({
         fs.mkdirSync(SLIDER, { recursive: true });
         return cb(null, SLIDER);
       }
+      if (action === "upload_logo") {
+        fs.mkdirSync(LOGO_DIR, { recursive: true });
+        return cb(null, LOGO_DIR);
+      }
       const id  = safeId(req.body?.artwork_id ?? req.query.artwork_id ?? "");
       const dir = path.join(GALLERY, id || "_unknown");
       fs.mkdirSync(dir, { recursive: true });
@@ -50,10 +55,9 @@ const upload = multer({
     filename(req, file, cb) {
       const ext  = path.extname(file.originalname).toLowerCase() || ".jpg";
       const action = String(req.query.action ?? "");
-      const name = action === "upload_slider"
-        ? `slide-${Date.now()}${ext}`
-        : `bild-${Date.now()}${ext}`;
-      cb(null, name);
+      if (action === "upload_slider") return cb(null, `slide-${Date.now()}${ext}`);
+      if (action === "upload_logo")   return cb(null, `logo-dark${ext}`);
+      cb(null, `bild-${Date.now()}${ext}`);
     },
   }),
   limits: { fileSize: 20 * 1024 * 1024 },
@@ -147,6 +151,12 @@ app.all("/api/admin.php", (req, res, next) => {
       case "upload_slider": {
         if (!req.file) return err(res, "Kein Bild empfangen");
         return ok(res, { path: `/images/slider/${req.file.filename}` });
+      }
+
+      // ── Logo hochladen ───────────────────────────────────────────────────
+      case "upload_logo": {
+        if (!req.file) return err(res, "Kein Bild empfangen");
+        return ok(res, { path: `/logo/${req.file.filename}` });
       }
 
       // ── Slider: Bild löschen → archiv/ ──────────────────────────────────

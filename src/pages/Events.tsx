@@ -14,7 +14,7 @@ const Events = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen pt-32 pb-24 px-6">
+      <div className="min-h-screen pt-20 pb-24 px-6">
         <div className="container mx-auto">
           {/* Header */}
           <motion.div

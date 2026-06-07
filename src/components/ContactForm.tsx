@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
-import InquiryTypeSelector from "./InquiryTypeSelector";
+import InquiryTypeSelector, { DEFAULT_INQUIRY_TYPES } from "./InquiryTypeSelector";
+import { useConfig } from "@/contexts/ConfigContext";
 import { Loader2 } from "lucide-react";
 
 const INQUIRY_SUBJECTS: Record<string, string> = {
@@ -12,8 +13,10 @@ const INQUIRY_SUBJECTS: Record<string, string> = {
 };
 
 const ContactForm = () => {
+  const { effectiveOverride } = useConfig();
+  const inquiryTypes = effectiveOverride.inquiryTypes ?? DEFAULT_INQUIRY_TYPES;
   const [searchParams] = useSearchParams();
-  const [inquiry, setInquiry] = useState("Werkankauf");
+  const [inquiry, setInquiry] = useState(inquiryTypes[0] ?? "Werkankauf");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [subject, setSubject] = useState("");
@@ -30,10 +33,10 @@ const ContactForm = () => {
     if (workParam) setSubject(`Anfrage zu: ${workParam}`);
   }, [searchParams]);
 
-  // Betreff automatisch aus Anfrage-Typ
+  // Betreff automatisch aus Anfrage-Typ (bekannte Typen → Mapping, neue Typen → Typname)
   useEffect(() => {
     if (!searchParams.get("work")) {
-      setSubject(INQUIRY_SUBJECTS[inquiry] ?? "");
+      setSubject(INQUIRY_SUBJECTS[inquiry] ?? inquiry);
     }
   }, [inquiry, searchParams]);
 
@@ -88,7 +91,7 @@ const ContactForm = () => {
         <label className="block font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground mb-4">
           Art der Anfrage
         </label>
-        <InquiryTypeSelector value={inquiry} onChange={setInquiry} />
+        <InquiryTypeSelector value={inquiry} onChange={setInquiry} types={inquiryTypes} />
       </div>
 
       {/* Felder */}

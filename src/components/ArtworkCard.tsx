@@ -75,6 +75,7 @@ const ArtworkCard = ({ artwork, onClick, index }: ArtworkCardProps) => {
                     alt={`${meta.title} ${i + 1}`}
                     loading={i === 0 ? "eager" : "lazy"}
                     draggable={false}
+                    style={{ objectPosition: meta.focalPoint ?? "center center" }}
                     className={`transition-transform duration-700 ease-out ${
                       i === 0
                         ? "w-full h-auto object-cover"
