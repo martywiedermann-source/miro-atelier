@@ -36,6 +36,7 @@ const Lightbox = ({ artwork, onClose, onNavigate }: LightboxProps) => {
   const [imgIndex, setImgIndex] = useState(0);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [brokenImages, setBrokenImages] = useState<Set<number>>(new Set());
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const isPanning = useRef(false);
@@ -50,6 +51,7 @@ const Lightbox = ({ artwork, onClose, onNavigate }: LightboxProps) => {
     setImgIndex(0);
     setZoom(1);
     setPanOffset({ x: 0, y: 0 });
+    setBrokenImages(new Set());
     if (emblaApi) emblaApi.scrollTo(0, true);
   }, [artwork?.id, emblaApi]);
 
@@ -208,17 +210,22 @@ const Lightbox = ({ artwork, onClose, onNavigate }: LightboxProps) => {
                           key={i}
                           className="min-w-0 shrink-0 grow-0 basis-full h-full flex items-center justify-center p-1 md:p-3"
                         >
-                          <img
-                            src={src}
-                            alt={`${meta.title} ${i + 1}`}
-                            className="max-h-full max-w-full object-contain select-none"
-                            draggable={false}
-                            style={{
-                              transform: `scale(${zoom}) translate(${panOffset.x / zoom}px, ${panOffset.y / zoom}px)`,
-                              transition: isPanning.current ? "none" : "transform 0.2s ease",
-                              willChange: "transform",
-                            }}
-                          />
+                          {brokenImages.has(i) ? (
+                            <ArtworkPlaceholder className="w-full h-full" />
+                          ) : (
+                            <img
+                              src={src}
+                              alt={`${meta.title} ${i + 1}`}
+                              className="max-h-full max-w-full object-contain select-none"
+                              draggable={false}
+                              onError={() => setBrokenImages((prev) => new Set(prev).add(i))}
+                              style={{
+                                transform: `scale(${zoom}) translate(${panOffset.x / zoom}px, ${panOffset.y / zoom}px)`,
+                                transition: isPanning.current ? "none" : "transform 0.2s ease",
+                                willChange: "transform",
+                              }}
+                            />
+                          )}
                         </div>
                       ))}
                     </div>

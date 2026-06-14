@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
 import { useConfig } from "@/contexts/ConfigContext";
+import { usePageTitle } from "@/lib/seo";
 
 const DEFAULTS = {
   name:     "Miroslav Wiedermann",
@@ -13,6 +14,7 @@ const DEFAULTS = {
 };
 
 const Impressum = () => {
+  usePageTitle("Impressum");
   const { effectiveOverride } = useConfig();
   const imp = effectiveOverride.impressum ?? {};
   const get = (key: keyof typeof DEFAULTS) => imp[key] ?? DEFAULTS[key];

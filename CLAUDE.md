@@ -224,6 +224,41 @@ Checkliste nach Änderungen an Admin-Panel oder hooks.ts:
 - [ ] Admin gespeichert → VORSCHAU zeigt Änderung im neuen Tab
 - [ ] Seite neu laden → Änderung bleibt (Persistenz)
 
+---
+
+### Regel 6: Jedes `<img>` braucht onError-Fallback
+
+Jedes `<img>`-Tag mit dynamischem `src` (aus Config, Upload, User-Daten) MUSS einen `onError`-Handler haben:
+- Entweder: `onError={() => setError(true)}` + bedingter Fallback-Render
+- Oder: `onError={(e) => { e.currentTarget.src = '/fallback.jpg'; }}`
+
+Kein dynamisches `<img>` ohne Fehlerbehandlung.
+
+---
+
+### Regel 7: "Fertig" bedeutet visuell verifiziert
+
+Eine Aufgabe gilt erst als fertig, wenn:
+1. `npm run build` ohne Fehler
+2. Dev-Server läuft (`npm run dev`)
+3. Die betroffene Seite im Browser geöffnet und geprüft
+4. Kein Broken-Image, kein Layout-Bruch, keine Console-Fehler
+
+Wenn kein Browser verfügbar (kein Playwright MCP): explizit schreiben **"Code-Änderung abgeschlossen — bitte im Browser prüfen"** statt "fertig".
+
+---
+
+### Regel 8: Playwright MCP für visuelle Verifikation nutzen
+
+Wenn Playwright MCP installiert ist: nach jeder Frontend-Änderung Screenshot machen und prüfen bevor dem User "fertig" gemeldet wird. Playwright-MCP gibt vollständige Browser-Kontrolle: Screenshots, Interaktionen, Console-Logs.
+
+Setup:
+```bash
+npx @playwright/mcp@latest
+```
+
+In `~/.claude.json` unter `mcpServers` eintragen (Server heißt "playwright").
+
 ## Offene Aufgaben
 1. Admin-Panel lokal fertig testen (User testet gerade)
 2. Branch feature/admin-artwork-crud → main mergen (erst nach User-Freigabe)

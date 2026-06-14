@@ -7,9 +7,24 @@ import { categories, Artwork } from "@/lib/artworks";
 import { useVisibleArtworks } from "@/lib/hooks";
 import { usePageTitle, useJsonLd } from "@/lib/seo";
 
+const SORT_OPTIONS = [
+  { value: "default", label: "Standard" },
+  { value: "year-desc", label: "Neueste zuerst" },
+  { value: "year-asc", label: "Älteste zuerst" },
+  { value: "alpha", label: "A – Z" },
+];
+
+function sortLocal(list: Artwork[], mode: string): Artwork[] {
+  if (mode === "year-desc") return [...list].sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
+  if (mode === "year-asc")  return [...list].sort((a, b) => (a.year ?? 0) - (b.year ?? 0));
+  if (mode === "alpha")     return [...list].sort((a, b) => a.title.localeCompare(b.title, "de"));
+  return list;
+}
+
 const Gallery = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
+  const [sortMode, setSortMode] = useState("default");
 
   usePageTitle("Werke");
   useJsonLd("schema-artist", {
@@ -28,9 +43,12 @@ const Gallery = () => {
   });
 
   const visibleArtworks = useVisibleArtworks();
-  const filtered = activeCategory === "all"
-    ? visibleArtworks
-    : visibleArtworks.filter((a) => a.category === activeCategory);
+  const filtered = sortLocal(
+    activeCategory === "all"
+      ? visibleArtworks
+      : visibleArtworks.filter((a) => a.category === activeCategory),
+    sortMode
+  );
 
   return (
     <PageTransition>
@@ -51,26 +69,38 @@ const Gallery = () => {
             </p>
           </motion.div>
 
-          {/* Filter bar */}
+          {/* Filter + Sort bar */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.4 }}
-            className="flex flex-wrap gap-2 mb-8"
+            className="flex flex-wrap items-center justify-between gap-3 mb-8"
           >
-            {categories.map((cat) => (
-              <button
-                key={cat.value}
-                onClick={() => setActiveCategory(cat.value)}
-                className={`font-mono text-xs uppercase tracking-[0.15em] px-5 py-2 border transition-all duration-300 ${
-                  activeCategory === cat.value
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat.value}
+                  onClick={() => setActiveCategory(cat.value)}
+                  className={`font-mono text-xs uppercase tracking-[0.15em] px-5 py-2 border transition-all duration-300 ${
+                    activeCategory === cat.value
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value)}
+              className="font-mono text-xs uppercase tracking-[0.15em] px-4 py-2 border border-border text-muted-foreground bg-transparent hover:border-foreground hover:text-foreground transition-all duration-300 cursor-pointer outline-none"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
           </motion.div>
 
           {/* Masonry grid */}

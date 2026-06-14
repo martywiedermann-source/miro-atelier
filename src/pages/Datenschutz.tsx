@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
+import { usePageTitle } from "@/lib/seo";
 
 const Datenschutz = () => {
+  usePageTitle("Datenschutz");
   return (
     <PageTransition>
       <div className="min-h-screen pt-40 pb-24 px-6">

@@ -875,7 +875,12 @@ const Admin = () => {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className={`font-body text-sm truncate ${!visible ? "line-through text-muted-foreground" : ""}`}>{artwork.title}</p>
-                        <p className="font-mono text-[10px] text-muted-foreground">{artwork.year} · {totalImages} Bild{totalImages !== 1 ? "er" : ""}</p>
+                        <p className="font-mono text-[10px] text-muted-foreground">
+                          {getArtworkMetaField(artwork.id, "year", String(artwork.year ?? ""))} · {totalImages} Bild{totalImages !== 1 ? "er" : ""}
+                          {getArtworkMetaField(artwork.id, "dimensions", artwork.dimensions ?? "") && (
+                            <> · {getArtworkMetaField(artwork.id, "dimensions", artwork.dimensions ?? "")}</>
+                          )}
+                        </p>
                       </div>
                       <button
                         onClick={() => setExpandedArtwork(isExpanded ? null : artwork.id)}
@@ -1337,7 +1342,7 @@ const Admin = () => {
                 </div>
                 <Switch
                   checked={!(draftOverride.hero?.hideTagline ?? false)}
-                  onCheckedChange={(v) => setDraftOverride({ ...draftOverride, hero: { ...draftOverride.hero, hideTagline: !v } })}
+                  onCheckedChange={(v) => autoSave({ ...draftOverride, hero: { ...draftOverride.hero, hideTagline: !v } })}
                 />
               </div>
               <div>
@@ -1357,7 +1362,7 @@ const Admin = () => {
                 </div>
                 <Switch
                   checked={!(draftOverride.hero?.hideCtaButton ?? false)}
-                  onCheckedChange={(v) => setDraftOverride({ ...draftOverride, hero: { ...draftOverride.hero, hideCtaButton: !v } })}
+                  onCheckedChange={(v) => autoSave({ ...draftOverride, hero: { ...draftOverride.hero, hideCtaButton: !v } })}
                 />
               </div>
               <div>

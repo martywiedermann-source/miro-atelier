@@ -7,7 +7,6 @@ export interface ArtEvent {
   date: string;
   endDate?: string;
   description: string;
-  image?: string;
   type: "solo" | "group" | "speaking";
   upcoming: boolean;
   visible?: boolean;
@@ -24,7 +23,7 @@ export const events: ArtEvent[] = [
     date: "XXXX-01-01",
     type: "solo",
     upcoming: false,
-    visible: true,
+    visible: false,
     description: "",
   },
 ];

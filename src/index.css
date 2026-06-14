@@ -70,6 +70,18 @@
   background: hsl(43 52% 54%);
 }
 
+/* Globale Focus-Styles — CI-konform, barrierefrei
+   :focus-visible = nur bei Tastaturnavigation sichtbar (nicht bei Mausklick)
+   Überschreibt blaue Browser-Standard-Outline auf allen nicht gestytten Elementen.
+   shadcn/ui-Komponenten (button.tsx etc.) behalten ihren eigenen focus-visible:ring-ring. */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 /* Gold line separator */
 .gold-line {
   @apply w-16 h-px bg-primary mx-auto;

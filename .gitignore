@@ -31,3 +31,9 @@ deploy.sh
 public/site-override.json
 public/images/gallery/archiv/
 public/images/gallery/*/archiv/
+
+# Admin-Uploads (Timestamp-IDs) — lokale Testuploads, nicht committen
+public/images/slider/slide-?????????????.jpg
+public/images/slider/slide-?????????????.jpeg
+public/images/gallery/werk-*/
+public/images/gallery/_unknown/

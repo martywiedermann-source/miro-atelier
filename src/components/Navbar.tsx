@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { siteConfig } from "@/lib/siteConfig";
+import { useConfig } from "@/contexts/ConfigContext";
 
 const allNavLinks = [
   { path: "/works",   label: "Werke",        key: "works"   },
@@ -11,38 +12,41 @@ const allNavLinks = [
   { path: "/contact", label: "Kontakt",       key: "contact" },
 ] as const;
 
-const navLinks = allNavLinks.filter(
-  (l) => siteConfig.pages[l.key].enabled
-);
-
 const GOLD = "#C9A84C";
 
-const NavLink = ({ link, pathname }: { link: typeof navLinks[number]; pathname: string }) => {
+const NavLink = ({ link, pathname }: { link: typeof allNavLinks[number]; pathname: string }) => {
+  const [hovered, setHovered] = useState(false);
   const isActive = pathname === link.path;
+  const showGold = isActive || hovered;
   return (
     <Link
       to={link.path}
-      className="relative text-[11px] uppercase tracking-[0.2em] transition-colors duration-300 group"
-      style={{ fontFamily: "Georgia, serif", color: isActive ? GOLD : "#333333" }}
+      className="relative text-[11px] uppercase tracking-[0.2em] transition-colors duration-300"
+      style={{ fontFamily: "Georgia, serif", color: showGold ? GOLD : "#333333" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       {link.label}
       <span
         className="absolute -bottom-px left-0 right-0 h-px transition-opacity duration-300"
-        style={{ backgroundColor: GOLD, opacity: isActive ? 1 : 0 }}
+        style={{ backgroundColor: GOLD, opacity: showGold ? 1 : 0 }}
       />
-      <style>{`
-        a:hover > span { opacity: 1 !important; }
-        a:hover { color: ${GOLD} !important; }
-      `}</style>
     </Link>
   );
 };
 
 const Navbar = () => {
+  const { effectiveOverride } = useConfig();
   const [hidden, setHidden]       = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [mobileOpen, setMobileOpen]   = useState(false);
+  const [logoError, setLogoError] = useState(false);
   const location = useLocation();
+
+  const navLinks = allNavLinks.filter((l) =>
+    (effectiveOverride.pages?.[l.key]?.enabled ?? siteConfig.pages[l.key].enabled)
+  );
+  const logoSrc = effectiveOverride.logoPath ?? "/logo/logo-dark.jpg";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -71,11 +75,21 @@ const Navbar = () => {
         >
           {/* Logo */}
           <Link to="/" className="flex items-center select-none group transition-opacity duration-300 hover:opacity-70">
-            <img
-              src="/logo/logo-dark.jpg"
-              alt="Atelier Miroslav Wiedermann"
-              className="h-10 w-auto object-contain"
-            />
+            {logoError ? (
+              <span
+                className="font-display text-sm tracking-[0.12em] font-light"
+                style={{ color: "#1a1a1a", fontFamily: "'Bodoni Moda', Georgia, serif" }}
+              >
+                ATELIER <span style={{ color: GOLD }}>MIROSLAV</span>
+              </span>
+            ) : (
+              <img
+                src={logoSrc}
+                alt="Atelier Miroslav Wiedermann"
+                className="h-10 w-auto object-contain"
+                onError={() => setLogoError(true)}
+              />
+            )}
           </Link>
 
           {/* Desktop nav */}
@@ -89,9 +103,10 @@ const Navbar = () => {
               className="flex items-center gap-1.5 pl-6 ml-2 text-[10px] uppercase tracking-[0.18em]"
               style={{ borderLeft: `1px solid rgba(201,168,76,0.35)`, fontFamily: "Georgia, serif" }}
             >
-              <button style={{ color: GOLD }}>DE</button>
+              <button type="button" style={{ color: GOLD }}>DE</button>
               <span style={{ color: "rgba(201,168,76,0.4)" }}>|</span>
               <button
+                type="button"
                 className="transition-colors duration-200"
                 style={{ color: "#999" }}
                 onMouseEnter={e => (e.currentTarget.style.color = GOLD)}
@@ -104,9 +119,11 @@ const Navbar = () => {
 
           {/* Hamburger */}
           <button
+            type="button"
             onClick={() => setMobileOpen(!mobileOpen)}
             className="md:hidden z-50"
-            aria-label="Menü öffnen"
+            aria-label={mobileOpen ? "Menü schließen" : "Menü öffnen"}
+            aria-expanded={mobileOpen}
             style={{ color: "#1a1a1a" }}
           >
             {mobileOpen ? <X size={22} /> : <Menu size={22} />}

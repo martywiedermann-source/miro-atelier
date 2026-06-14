@@ -30,7 +30,7 @@ const About = () => {
               transition={{ duration: 0.8 }}
             >
               <img
-                src="/images/portrait.jpg" // REPLACE with actual portrait
+                src="/images/portrait.jpg"
                 alt="Miroslav Wiedermann"
                 className="w-full aspect-[3/4] object-cover"
                 loading="lazy"

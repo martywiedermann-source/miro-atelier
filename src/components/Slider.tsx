@@ -41,6 +41,8 @@ const Slider = ({
   heightClass = "h-screen",
 }: SliderProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [brokenSlides, setBrokenSlides] = useState<Set<number>>(new Set());
+  const markBroken = (i: number) => setBrokenSlides((prev) => new Set(prev).add(i));
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     duration: crossfade ? 0 : 30,
@@ -89,12 +91,19 @@ const Slider = ({
               transition={{ duration: 1.2, ease: "easeInOut" }}
               style={{ zIndex: activeIndex === i ? 1 : 0 }}
             >
-              <img
-                src={slide.image}
-                alt={slide.title || `Slide ${i + 1}`}
-                className="w-full h-full object-cover"
-                loading={i === 0 ? "eager" : "lazy"}
-              />
+              {brokenSlides.has(i) ? (
+                <div className="w-full h-full bg-muted flex items-center justify-center">
+                  <span className="font-mono text-xs text-muted-foreground/50 uppercase tracking-widest">Kein Bild</span>
+                </div>
+              ) : (
+                <img
+                  src={slide.image}
+                  alt={slide.title || `Slide ${i + 1}`}
+                  className="w-full h-full object-cover"
+                  loading={i === 0 ? "eager" : "lazy"}
+                  onError={() => markBroken(i)}
+                />
+              )}
               {/* Dark gradient overlay — bottom for caption, subtle overall for text readability */}
               <div
                 className="absolute inset-0"
@@ -183,12 +192,19 @@ const Slider = ({
         <div className="flex h-full">
           {slides.map((slide, i) => (
             <div key={i} className="min-w-0 shrink-0 grow-0 basis-full h-full relative">
-              <img
-                src={slide.image}
-                alt={slide.title || `Slide ${i + 1}`}
-                className="w-full h-full object-cover"
-                loading={i === 0 ? "eager" : "lazy"}
-              />
+              {brokenSlides.has(i) ? (
+                <div className="w-full h-full bg-muted flex items-center justify-center">
+                  <span className="font-mono text-xs text-muted-foreground/50 uppercase tracking-widest">Kein Bild</span>
+                </div>
+              ) : (
+                <img
+                  src={slide.image}
+                  alt={slide.title || `Slide ${i + 1}`}
+                  className="w-full h-full object-cover"
+                  loading={i === 0 ? "eager" : "lazy"}
+                  onError={() => markBroken(i)}
+                />
+              )}
               <div
                 className="absolute inset-0"
                 style={{

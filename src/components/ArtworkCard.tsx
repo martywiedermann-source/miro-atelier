@@ -150,12 +150,6 @@ const ArtworkCard = ({ artwork, onClick, index }: ArtworkCardProps) => {
         )}
       </div>
 
-      {/* Maße-Streifen */}
-      {meta.dimensions && (
-        <p className="font-mono text-[10px] text-muted-foreground text-center py-1.5 px-3 border-t border-border/40 tracking-wider">
-          {meta.dimensions}
-        </p>
-      )}
     </motion.div>
   );
 };
