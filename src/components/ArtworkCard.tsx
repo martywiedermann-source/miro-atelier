@@ -121,14 +121,14 @@ const ArtworkCard = ({ artwork, onClick, index }: ArtworkCardProps) => {
           <>
             <button
               onClick={scrollPrev}
-              className={`absolute left-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 flex items-center justify-center text-white/80 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition-all duration-300 ${overlayVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+              className={`absolute left-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 flex items-center justify-center text-white/80 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition-all duration-300 opacity-100 pointer-events-auto ${overlayVisible ? "md:opacity-100 md:pointer-events-auto" : "md:opacity-0 md:pointer-events-none"}`}
               aria-label="Vorheriges Bild"
             >
               ‹
             </button>
             <button
               onClick={scrollNext}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 flex items-center justify-center text-white/80 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition-all duration-300 ${overlayVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+              className={`absolute right-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 flex items-center justify-center text-white/80 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition-all duration-300 opacity-100 pointer-events-auto ${overlayVisible ? "md:opacity-100 md:pointer-events-auto" : "md:opacity-0 md:pointer-events-none"}`}
               aria-label="Nächstes Bild"
             >
               ›

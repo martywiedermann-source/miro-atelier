@@ -240,6 +240,7 @@ const Home = () => {
             <img
               src="/logo/logo-dark.jpg"
               alt="Atelier Miroslav Wiedermann"
+              loading="lazy"
               className="w-32 mx-auto mb-10 opacity-90"
             />
             <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-light text-dark-contrast-foreground mb-10">
