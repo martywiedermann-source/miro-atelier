@@ -104,6 +104,15 @@ const IMPRESSUM_FIELDS: Array<{ key: string; label: string; defaultValue: string
   { key: "steuer",     label: "Umsatzsteuer",  defaultValue: "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung)." },
 ];
 
+const CONTACT_FIELDS: Array<{ key: string; label: string; defaultValue: string }> = [
+  { key: "ueberschrift", label: "Überschrift",   defaultValue: "Schreiben Sie mir" },
+  { key: "label",        label: "Bereich-Label", defaultValue: "Atelier" },
+  { key: "email",        label: "E-Mail",        defaultValue: "miro@ateliermiro.de" },
+  { key: "telefon",      label: "Telefon",       defaultValue: "+49 175 5933703" },
+  { key: "strasse",      label: "Straße",        defaultValue: "Brühlstraße 3" },
+  { key: "ort",          label: "PLZ / Ort",     defaultValue: "63571 Gelnhausen / Hailer" },
+];
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
@@ -114,7 +123,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-type Tab = "seiten" | "werke" | "ausstellungen" | "hero" | "impressum" | "design";
+type Tab = "seiten" | "werke" | "ausstellungen" | "hero" | "kontakt" | "impressum" | "design";
 
 // ── Login Screen ──────────────────────────────────────────────────────────────
 
@@ -307,41 +316,48 @@ const Admin = () => {
     });
   }
 
-  const handleImageUpload = useCallback(async (artworkId: string, file: File) => {
-    if (!file) return;
-    const validErr = validateImageFile(file);
-    if (validErr) { toast.error(validErr); return; }
+  const handleImageUpload = useCallback(async (artworkId: string, files: FileList | File[]) => {
+    const list = Array.from(files);
+    if (list.length === 0) return;
+    const artwork = artworks.find((a) => a.id === artworkId);
+    const base = artwork?.images ?? [];
+    const currentOrder = getImageOrder(artworkId, base);
+    const remaining = 15 - currentOrder.length;
+    if (remaining <= 0) { toast.error("Maximum 15 Bilder erreicht"); return; }
+    const toUpload = list.slice(0, remaining);
+    if (list.length > remaining) toast.error(`Nur ${remaining} weitere(s) Bild(er) möglich — Rest übersprungen`);
     setUploading(artworkId);
-    const form = new FormData();
-    form.append("artwork_id", artworkId);
-    form.append("image", file);
+    const uploaded: string[] = [];
     try {
-      const res = await apiUpload("upload_image", form);
-      if (res.ok && res.path) {
-        const path = res.path as string;
-        const artwork = artworks.find((a) => a.id === artworkId);
-        const base = artwork?.images ?? [];
-        const currentOrder = getImageOrder(artworkId, base);
+      for (const file of toUpload) {
+        const validErr = validateImageFile(file);
+        if (validErr) { toast.error(`${file.name}: ${validErr}`); continue; }
+        const form = new FormData();
+        form.append("artwork_id", artworkId);
+        form.append("image", file);
+        const res = await apiUpload("upload_image", form);
+        if (res.ok && res.path) uploaded.push(res.path as string);
+        else toast.error((res.error as string) ?? `Upload fehlgeschlagen: ${file.name}`);
+      }
+      if (uploaded.length > 0) {
         await autoSave({
           ...draftOverride,
           artworks: {
             ...draftOverride.artworks,
             [artworkId]: {
               ...draftOverride.artworks?.[artworkId],
-              imageOrder: [...currentOrder, path],
+              imageOrder: [...currentOrder, ...uploaded],
             },
           },
         });
-        toast.success("Bild hochgeladen und gespeichert");
-      } else {
-        toast.error((res.error as string) ?? "Upload fehlgeschlagen");
+        toast.success(uploaded.length === 1 ? "Bild hochgeladen und gespeichert" : `${uploaded.length} Bilder hochgeladen und gespeichert`);
       }
     } catch (e) {
       handleApiError(e);
     } finally {
       setUploading(null);
     }
-  }, [draftOverride, autoSave, handleApiError]);
+  }, [artworks, draftOverride, autoSave, handleApiError]);
 
   const handleImageDelete = useCallback(async (artworkId: string, src: string) => {
     const filename = src.split("/").pop() ?? "";
@@ -737,6 +753,16 @@ const Admin = () => {
     setDraftOverride({ ...draftOverride, impressum: { ...draftOverride.impressum, [key]: value } });
   }
 
+  // ── Kontakt helpers ──────────────────────────────────────────────────────────
+
+  function getContactField(key: string, defaultValue: string): string {
+    return draftOverride.contact?.[key] ?? defaultValue;
+  }
+
+  function setContactField(key: string, value: string) {
+    setDraftOverride({ ...draftOverride, contact: { ...draftOverride.contact, [key]: value } });
+  }
+
   // ── Design helpers ──────────────────────────────────────────────────────────
 
   function getColor(key: string, fallback: string): string {
@@ -768,6 +794,7 @@ const Admin = () => {
     { id: "hero",          label: "Hero" },
     { id: "seiten",        label: "Seiten" },
     { id: "ausstellungen", label: "Ausstellungen" },
+    { id: "kontakt",       label: "Kontakt" },
     { id: "impressum",     label: "Impressum" },
     { id: "design",        label: "Design" },
   ];
@@ -976,11 +1003,12 @@ const Admin = () => {
                             <input
                               type="file"
                               accept="image/jpeg,image/png,image/webp"
+                              multiple
                               className="hidden"
                               ref={(el) => { uploadRefs.current[artwork.id] = el; }}
                               onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                if (f) handleImageUpload(artwork.id, f);
+                                const fs = e.target.files;
+                                if (fs && fs.length) handleImageUpload(artwork.id, fs);
                                 e.target.value = "";
                               }}
                             />
@@ -990,7 +1018,7 @@ const Admin = () => {
                               onClick={() => uploadRefs.current[artwork.id]?.click()}
                               className="font-mono text-[10px] uppercase tracking-wider"
                             >
-                              {uploading === artwork.id ? "Lädt hoch..." : "+ Bild hochladen"}
+                              {uploading === artwork.id ? "Lädt hoch..." : "+ Bilder hochladen"}
                             </Button>
                           </>
                         ) : (
@@ -1545,6 +1573,28 @@ const Admin = () => {
                 </div>
               </div>
             )}
+          </section>
+        )}
+
+        {/* ── KONTAKT ───────────────────────────────────────────────────── */}
+        {activeTab === "kontakt" && (
+          <section>
+            <SectionHeading>Kontakt</SectionHeading>
+            <p className="font-body text-sm text-muted-foreground mb-6">
+              Diese Angaben erscheinen auf der Kontakt-Seite (linke Spalte).
+            </p>
+            <div className="space-y-4">
+              {CONTACT_FIELDS.map((f) => (
+                <div key={f.key}>
+                  <Label className="font-mono text-[10px] uppercase tracking-wider">{f.label}</Label>
+                  <Input
+                    value={getContactField(f.key, f.defaultValue)}
+                    onChange={(e) => setContactField(f.key, e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              ))}
+            </div>
           </section>
         )}
 

@@ -47,6 +47,7 @@ export interface SiteOverride {
   inquiryTypes?: string[];
   logoPath?: string;
   impressum?: Record<string, string>;
+  contact?: Record<string, string>;
   design?: {
     colors?: { primary?: string; background?: string; foreground?: string };
     fontScale?: number;

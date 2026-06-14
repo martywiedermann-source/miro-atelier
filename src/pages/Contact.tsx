@@ -3,9 +3,18 @@ import PageTransition from "@/components/PageTransition";
 import ContactForm from "@/components/ContactForm";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { usePageTitle } from "@/lib/seo";
+import { useConfig } from "@/contexts/ConfigContext";
 
 const Contact = () => {
   usePageTitle("Kontakt");
+  const { effectiveOverride } = useConfig();
+  const c = effectiveOverride.contact ?? {};
+  const ueberschrift = c.ueberschrift || "Schreiben Sie mir";
+  const label = c.label || "Atelier";
+  const email = c.email || "miro@ateliermiro.de";
+  const telefon = c.telefon || "+49 175 5933703";
+  const strasse = c.strasse || "Brühlstraße 3";
+  const ort = c.ort || "63571 Gelnhausen / Hailer";
   return (
     <PageTransition>
       <div className="min-h-screen pt-20 pb-24 px-6">
@@ -23,34 +32,34 @@ const Contact = () => {
                   Kontakt
                 </p>
                 <h1 className="font-display text-4xl md:text-5xl font-light text-foreground mb-6">
-                  Schreiben Sie mir
+                  {ueberschrift}
                 </h1>
               </div>
 
               <div>
                 <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground mb-5">
-                  Atelier
+                  {label}
                 </p>
                 <div className="space-y-4">
                   <a
-                    href="mailto:miro@ateliermiro.de"
+                    href={`mailto:${email}`}
                     className="flex items-center gap-4 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Mail size={16} className="text-primary shrink-0" />
-                    <span className="text-sm">miro@ateliermiro.de</span>
+                    <span className="text-sm">{email}</span>
                   </a>
                   <a
-                    href="tel:+491755933703"
+                    href={`tel:${telefon.replace(/\s+/g, "")}`}
                     className="flex items-center gap-4 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Phone size={16} className="text-primary shrink-0" />
-                    <span className="text-sm">+49 175 5933703</span>
+                    <span className="text-sm">{telefon}</span>
                   </a>
                   <div className="flex items-start gap-4 text-muted-foreground">
                     <MapPin size={16} className="text-primary shrink-0 mt-0.5" />
                     <span className="text-sm leading-relaxed">
-                      Brühlstraße 3<br />
-                      63571 Gelnhausen / Hailer
+                      {strasse}<br />
+                      {ort}
                     </span>
                   </div>
                 </div>
