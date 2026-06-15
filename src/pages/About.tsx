@@ -5,9 +5,28 @@ import Timeline from "@/components/Timeline";
 import SectionLabel from "@/components/SectionLabel";
 import LogoPartnerRow from "@/components/LogoPartnerRow";
 import { usePageTitle } from "@/lib/seo";
+import { useConfig } from "@/contexts/ConfigContext";
+
+const ABOUT_DEFAULTS = {
+  label_kuenstler: "Der Künstler",
+  bio_p1: "Miroslav Wiedermann, geboren 1964 in Eger, studierte an der Werkkunstschule Flensburg. Seit 1994 arbeitet er freischaffend in Kunst und Architektur — mit konzeptionellen Messebauten für Cebit, Anuga und Musikmesse Frankfurt sowie Projekten für das Max Planck Institut in Jena und das Sultanat Oman.",
+  bio_p2: "Sein Atelier befindet sich in Gelnhausen Hailer, wo er seit 2007 arbeitet. Parallel entstanden Projekte in Pilsen und Zlin (Tschechien) sowie Ausstellungen in Hessen und darüber hinaus.",
+  label_kunst: "Zu meiner Kunst",
+  kunst_p1: "Allein der Gedanke, mich einordnen zu wollen, ist mir unendlich fremd. Ich organisiere meine Arbeiten als Objekte und Installationen.",
+  kunst_p2: "Mein Weg zum Filz führte mich vor etwa fünfzehn Jahren nach München, wo mich das Material in seiner Doppelnatur — weich und dennoch strukturstabil — faszinierte. Durch präzises Schneiden und Schichten entwickelte ich eine eigenständige Methode, die meine Arbeiten als echte Reliefs entstehen lässt: zwischen Malerei und Skulptur, veränderlich mit Licht und Betrachterperspektive.",
+  label_kontakt: "Kontakt",
+  kontakt_adresse: "Berkaer Str. 19 · 99837 Werra-Suhl-Tal",
+  kontakt_telefon: "Tel. +49 175 5933703",
+  kontakt_email: "miro@ateliermiro.de",
+  zitat: "Allein der Gedanke, mich einordnen zu wollen, ist mir unendlich fremd.",
+};
 
 const About = () => {
   usePageTitle("Über den Künstler");
+  const { effectiveOverride } = useConfig();
+  const ab = effectiveOverride.about ?? {};
+  const t = (key: keyof typeof ABOUT_DEFAULTS) => ab[key] ?? ABOUT_DEFAULTS[key];
+
   return (
     <PageTransition>
       {/* Full-width banner — Bild enthält Text bereits eingedruckt, kein HTML-Overlay */}
@@ -45,31 +64,23 @@ const About = () => {
               className="flex flex-col justify-center space-y-12"
             >
               <div>
-                <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-4">Der Künstler</p>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  Miroslav Wiedermann, geboren 1964 in Eger, studierte an der Werkkunstschule Flensburg. Seit 1994 arbeitet er freischaffend in Kunst und Architektur — mit konzeptionellen Messebauten für Cebit, Anuga und Musikmesse Frankfurt sowie Projekten für das Max Planck Institut in Jena und das Sultanat Oman.
-                </p>
-                <p className="text-muted-foreground leading-relaxed">
-                  Sein Atelier befindet sich in Gelnhausen Hailer, wo er seit 2007 arbeitet. Parallel entstanden Projekte in Pilsen und Zlin (Tschechien) sowie Ausstellungen in Hessen und darüber hinaus.
-                </p>
+                <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-4">{t("label_kuenstler")}</p>
+                <p className="text-muted-foreground leading-relaxed mb-4">{t("bio_p1")}</p>
+                <p className="text-muted-foreground leading-relaxed">{t("bio_p2")}</p>
               </div>
 
               <div>
-                <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-4">Zu meiner Kunst</p>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  Allein der Gedanke, mich einordnen zu wollen, ist mir unendlich fremd. Ich organisiere meine Arbeiten als Objekte und Installationen.
-                </p>
-                <p className="text-muted-foreground leading-relaxed">
-                  Mein Weg zum Filz führte mich vor etwa fünfzehn Jahren nach München, wo mich das Material in seiner Doppelnatur — weich und dennoch strukturstabil — faszinierte. Durch präzises Schneiden und Schichten entwickelte ich eine eigenständige Methode, die meine Arbeiten als echte Reliefs entstehen lässt: zwischen Malerei und Skulptur, veränderlich mit Licht und Betrachterperspektive.
-                </p>
+                <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-4">{t("label_kunst")}</p>
+                <p className="text-muted-foreground leading-relaxed mb-4">{t("kunst_p1")}</p>
+                <p className="text-muted-foreground leading-relaxed">{t("kunst_p2")}</p>
               </div>
 
               <div>
-                <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-4">Kontakt</p>
+                <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary mb-4">{t("label_kontakt")}</p>
                 <p className="text-muted-foreground leading-relaxed">
-                  Berkaer Str. 19 · 99837 Werra-Suhl-Tal<br />
-                  Tel. +49 175 5933703<br />
-                  miro@ateliermiro.de
+                  {t("kontakt_adresse")}<br />
+                  {t("kontakt_telefon")}<br />
+                  {t("kontakt_email")}
                 </p>
               </div>
             </motion.div>
@@ -125,7 +136,7 @@ const About = () => {
             className="max-w-4xl mx-auto text-center py-20 border-t border-b border-border mb-24"
           >
             <blockquote className="font-display text-3xl md:text-4xl font-light italic text-foreground leading-relaxed">
-              »Allein der Gedanke, mich einordnen zu wollen, ist mir unendlich fremd.«
+              »{t("zitat")}«
             </blockquote>
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-primary mt-8">
               — Miroslav Wiedermann

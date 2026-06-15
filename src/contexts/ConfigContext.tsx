@@ -21,6 +21,8 @@ export interface SiteOverride {
   heroSlides?: Array<{ image: string; title: string; year: string }>;
   hero?: { tagline?: string; ctaText?: string };
   impressum?: Record<string, string>;
+  contact?: Record<string, string>;
+  about?: Record<string, string>;
   design?: {
     colors?: { primary?: string; background?: string; foreground?: string };
     fontScale?: number;
