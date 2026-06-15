@@ -104,6 +104,20 @@ const IMPRESSUM_FIELDS: Array<{ key: string; label: string; defaultValue: string
   { key: "steuer",     label: "Umsatzsteuer",  defaultValue: "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung)." },
 ];
 
+const ABOUT_FIELDS: Array<{ key: string; label: string; defaultValue: string }> = [
+  { key: "label_kuenstler", label: "Label: Der Kuenstler",    defaultValue: "Der Künstler" },
+  { key: "bio_p1",          label: "Biografie Absatz 1",      defaultValue: "Miroslav Wiedermann, geboren 1964 in Eger, studierte an der Werkkunstschule Flensburg. Seit 1994 arbeitet er freischaffend in Kunst und Architektur — mit konzeptionellen Messebauten für Cebit, Anuga und Musikmesse Frankfurt sowie Projekten für das Max Planck Institut in Jena und das Sultanat Oman." },
+  { key: "bio_p2",          label: "Biografie Absatz 2",      defaultValue: "Sein Atelier befindet sich in Gelnhausen Hailer, wo er seit 2007 arbeitet. Parallel entstanden Projekte in Pilsen und Zlin (Tschechien) sowie Ausstellungen in Hessen und darüber hinaus." },
+  { key: "label_kunst",     label: "Label: Zu meiner Kunst",  defaultValue: "Zu meiner Kunst" },
+  { key: "kunst_p1",        label: "Kunststatement Absatz 1", defaultValue: "Allein der Gedanke, mich einordnen zu wollen, ist mir unendlich fremd. Ich organisiere meine Arbeiten als Objekte und Installationen." },
+  { key: "kunst_p2",        label: "Kunststatement Absatz 2", defaultValue: "Mein Weg zum Filz führte mich vor etwa fünfzehn Jahren nach München, wo mich das Material in seiner Doppelnatur — weich und dennoch strukturstabil — faszinierte. Durch präzises Schneiden und Schichten entwickelte ich eine eigenständige Methode, die meine Arbeiten als echte Reliefs entstehen lässt: zwischen Malerei und Skulptur, veränderlich mit Licht und Betrachterperspektive." },
+  { key: "label_kontakt",   label: "Label: Kontakt",          defaultValue: "Kontakt" },
+  { key: "kontakt_adresse", label: "Kontakt Adresse",         defaultValue: "Berkaer Str. 19 · 99837 Werra-Suhl-Tal" },
+  { key: "kontakt_telefon", label: "Kontakt Telefon",         defaultValue: "Tel. +49 175 5933703" },
+  { key: "kontakt_email",   label: "Kontakt E-Mail",          defaultValue: "miro@ateliermiro.de" },
+  { key: "zitat",           label: "Zitat (Pullout)",         defaultValue: "Allein der Gedanke, mich einordnen zu wollen, ist mir unendlich fremd." },
+];
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
@@ -114,7 +128,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-type Tab = "seiten" | "werke" | "ausstellungen" | "hero" | "impressum" | "design";
+type Tab = "seiten" | "werke" | "ausstellungen" | "hero" | "impressum" | "über" | "design";
 
 // ── Login Screen ──────────────────────────────────────────────────────────────
 
@@ -607,6 +621,16 @@ const Admin = () => {
     setDraftOverride({ ...draftOverride, impressum: { ...draftOverride.impressum, [key]: value } });
   }
 
+  // ── About helpers ────────────────────────────────────────────────────────────
+
+  function getAboutField(key: string, defaultValue: string): string {
+    return draftOverride.about?.[key] ?? defaultValue;
+  }
+
+  function setAboutField(key: string, value: string) {
+    setDraftOverride({ ...draftOverride, about: { ...draftOverride.about, [key]: value } });
+  }
+
   // ── Design helpers ──────────────────────────────────────────────────────────
 
   function getColor(key: string, fallback: string): string {
@@ -638,6 +662,7 @@ const Admin = () => {
     { id: "hero",          label: "Hero" },
     { id: "seiten",        label: "Seiten" },
     { id: "ausstellungen", label: "Ausstellungen" },
+    { id: "über",          label: "Über" },
     { id: "impressum",     label: "Impressum" },
     { id: "design",        label: "Design" },
   ];
@@ -1111,6 +1136,28 @@ const Admin = () => {
                 </div>
               </div>
             )}
+          </section>
+        )}
+
+        {/* ── ÜBER ───────────────────────────────────────────────────────── */}
+        {activeTab === "über" && (
+          <section>
+            <SectionHeading>Über-Seite</SectionHeading>
+            <p className="font-body text-sm text-muted-foreground mb-6">
+              Diese Texte erscheinen auf der Über-Seite. Leer lassen = Standardtext wird verwendet.
+            </p>
+            <div className="space-y-4">
+              {ABOUT_FIELDS.map((f) => (
+                <div key={f.key}>
+                  <Label className="font-mono text-[10px] uppercase tracking-wider">{f.label}</Label>
+                  <Input
+                    value={getAboutField(f.key, f.defaultValue)}
+                    onChange={(e) => setAboutField(f.key, e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              ))}
+            </div>
           </section>
         )}
 
